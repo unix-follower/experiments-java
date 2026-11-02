@@ -1,0 +1,60 @@
+flowchart TD
+    A([new AnnotationConfigApplicationContext / SpringApplication.run]) --> R
+
+    subgraph R["refresh() - startup"]
+        direction TB
+        R1["prepareRefresh<br/>init property sources, validate required properties"]
+        R2["obtainFreshBeanFactory<br/>create DefaultListableBeanFactory, load bean definitions"]
+        R3["prepareBeanFactory<br/>classloader, SpEL, ApplicationContextAwareProcessor, resolvable deps"]
+        R4["postProcessBeanFactory<br/>subclass hook"]
+        R5["invokeBeanFactoryPostProcessors<br/>BeanDefinitionRegistryPostProcessor, BeanFactoryPostProcessor"]
+        R6["registerBeanPostProcessors"]
+        R7["initMessageSource"]
+        R8["initApplicationEventMulticaster"]
+        R9["onRefresh<br/>e.g. start embedded web server"]
+        R10["registerListeners"]
+        R11["finishBeanFactoryInitialization<br/>instantiate non-lazy singletons"]
+        R12["finishRefresh<br/>LifecycleProcessor.onRefresh, publish ContextRefreshedEvent"]
+        R1 --> R2 --> R3 --> R4 --> R5 --> R6 --> R7 --> R8 --> R9 --> R10 --> R11 --> R12
+    end
+
+    R11 -.-> B1
+
+    subgraph B["Singleton bean creation"]
+        direction TB
+        B1["Instantiate bean<br/>constructor / factory method"]
+        B2["Populate properties<br/>dependency injection"]
+        B3["Aware callbacks<br/>BeanNameAware, BeanFactoryAware, ApplicationContextAware"]
+        B4["BeanPostProcessor.postProcessBeforeInitialization<br/>incl. @PostConstruct"]
+        B5["InitializingBean.afterPropertiesSet"]
+        B6["Custom init-method / @Bean initMethod"]
+        B7["BeanPostProcessor.postProcessAfterInitialization<br/>AOP proxies created here"]
+        B8([Bean ready])
+        B1 --> B2 --> B3 --> B4 --> B5 --> B6 --> B7 --> B8
+    end
+
+    R -- exception --> F["cancelRefresh<br/>destroy created singletons, rethrow"]
+    F --> Z([Context failed])
+
+    R12 --> RUN([Context active - beans in use])
+
+    RUN -- "start()" --> ST["Lifecycle.start on beans<br/>publish ContextStartedEvent"]
+    ST --> RUN
+    RUN -- "stop()" --> SP["Lifecycle.stop on beans<br/>publish ContextStoppedEvent"]
+    SP --> RUN
+    SP -- "start()" --> ST
+
+    RUN -- "close() / shutdown hook" --> C1
+    SP -- "close()" --> C1
+
+    subgraph D["close() - shutdown"]
+        direction TB
+        C1["publish ContextClosedEvent"]
+        C2["LifecycleProcessor.onClose<br/>stop Lifecycle / SmartLifecycle beans"]
+        C3["destroyBeans<br/>@PreDestroy, DisposableBean.destroy, custom destroy-method"]
+        C4["closeBeanFactory"]
+        C5["onClose<br/>e.g. stop embedded web server"]
+        C1 --> C2 --> C3 --> C4 --> C5
+    end
+
+    C5 --> END([Context closed])

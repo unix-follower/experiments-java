@@ -1,0 +1,31 @@
+flowchart TD
+    S(["Start: choosing an architecture"]) --> Q1{"Is the domain well understood<br/>and boundaries stable?"}
+    Q1 -- "No / exploring (MVP, startup)" --> M1["Monolith<br/>simplest to build, deploy, debug"]
+    Q1 -- Yes --> Q2{"Is workload spiky, event-triggered<br/>or short-lived tasks?"}
+
+    Q2 -- Yes --> Q2a{"Can you accept vendor lock-in,<br/>cold starts and execution limits?"}
+    Q2a -- Yes --> SL["Serverless / FaaS"]
+    Q2a -- No --> Q3
+    Q2 -- No --> Q3{"Do parts need to scale<br/>or deploy independently?"}
+
+    Q3 -- "No" --> Q4{"Is the team large or the codebase<br/>hard to maintain as one unit?"}
+    Q4 -- "No" --> M1
+    Q4 -- Yes --> MM["Modular monolith<br/>strong module boundaries, one deployable"]
+
+    Q3 -- Yes --> Q5{"Do you have DevOps maturity?<br/>CI/CD, observability, orchestration"}
+    Q5 -- No --> MM
+    Q5 -- Yes --> Q6{"Multiple autonomous teams<br/>owning separate business capabilities?"}
+
+    Q6 -- No --> MM
+    Q6 -- Yes --> Q7{"Is the main goal reusing shared<br/>enterprise services across legacy systems?"}
+    Q7 -- Yes --> SOA["SOA<br/>coarse-grained services, ESB / shared contracts"]
+    Q7 -- No --> MS["Microservices<br/>independent services, own data, own deploys"]
+
+    MS --> Q8{"Need loose coupling, async flows,<br/>audit or real-time streams?"}
+    SL --> Q8
+    MM --> Q8
+    Q8 -- Yes --> EDA["Add Event-driven architecture<br/>message broker, events, CQRS / saga as needed"]
+    Q8 -- No --> DONE(["Keep synchronous APIs"])
+
+    M1 -. "grow later" .-> MM
+    MM -. "extract services when needed" .-> MS

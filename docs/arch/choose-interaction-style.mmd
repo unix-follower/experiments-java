@@ -1,0 +1,46 @@
+flowchart TD
+    S(["Start: how should apps interact?"]) --> Q1{"Do the apps run in the same<br/>process or on the same host?"}
+    Q1 -- "Same process" --> IN["In-process calls<br/>modular monolith, method calls, events"]
+    Q1 -- "Same host, separate processes" --> LIPC["Local IPC<br/>Unix sockets, pipes, shared memory"]
+    Q1 -- "Across network" --> Q2{"Does the caller need an<br/>immediate response?"}
+
+    Q2 -- Yes --> Q3{"Need data aggregated from<br/>several services for one client?"}
+    Q3 -- Yes --> GW["API gateway / BFF / API composition"]
+    Q3 -- No --> SYNC["Synchronous request/response<br/>REST, gRPC, GraphQL<br/>add timeouts, retries, circuit breaker"]
+
+    Q2 -- No --> Q4{"Many consumers or unknown<br/>future consumers?"}
+    Q4 -- Yes --> Q5{"Continuous high-volume<br/>ordered stream?"}
+    Q5 -- Yes --> STR["Streaming<br/>Kafka, Pulsar, Kinesis"]
+    Q5 -- No --> PUB["Pub/Sub events<br/>topics, event notifications"]
+    Q4 -- No --> MQ["Async messaging<br/>point-to-point queue, RabbitMQ, SQS"]
+
+    SYNC --> T
+    GW --> T
+    STR --> T
+    PUB --> T
+    MQ --> T
+    IN --> T
+    LIPC --> T
+
+    T{"Does one business operation change<br/>data in more than one service or DB?"}
+    T -- No --> LOCAL["Local ACID transaction<br/>plus idempotent handlers"]
+    T -- Yes --> Q6{"Is strict atomicity mandatory AND all<br/>resources support XA AND scale is modest?"}
+    Q6 -- Yes --> TPC["Two-phase commit / XA<br/>strong consistency, blocking, coordinator is SPOF"]
+    Q6 -- No --> Q7{"Can intermediate states be<br/>visible and compensated?"}
+    Q7 -- "No, need reservations" --> TCC["TCC<br/>Try - Confirm - Cancel"]
+    Q7 -- Yes --> Q8{"Need central visibility, complex flow<br/>or many steps with branching?"}
+    Q8 -- Yes --> ORCH["Saga orchestration<br/>central orchestrator / workflow engine<br/>Temporal, Camunda"]
+    Q8 -- No --> Q9{"Few steps and teams want<br/>loose coupling?"}
+    Q9 -- Yes --> CHOR["Saga choreography<br/>services react to each other's events"]
+    Q9 -- No --> ORCH
+
+    ORCH --> OB["Reliability: transactional outbox,<br/>idempotency keys, dead-letter queue"]
+    CHOR --> OB
+    TCC --> OB
+
+    LOCAL --> Q10{"Separate read and write<br/>models or full audit history?"}
+    OB --> Q10
+    TPC --> Q10
+    Q10 -- Yes --> CQRS["CQRS / Event sourcing"]
+    Q10 -- No --> DONE(["Done"])
+    CQRS --> DONE

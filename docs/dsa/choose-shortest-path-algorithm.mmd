@@ -1,0 +1,33 @@
+flowchart TD
+    S(["Choose a shortest path algorithm"]) --> Q1{"Need paths between<br/>all pairs of vertices?"}
+
+    Q1 -- Yes --> Q2{"Negative edge weights?"}
+    Q2 -- No --> Q3{"Dense graph?<br/>E close to V squared"}
+    Q3 -- Yes --> FW["Floyd-Warshall<br/>O(V^3)"]
+    Q3 -- No --> DALL["Dijkstra from every vertex<br/>O(V * E log V)"]
+    Q2 -- Yes --> Q4{"Dense graph?"}
+    Q4 -- Yes --> FW
+    Q4 -- No --> JOH["Johnson<br/>Bellman-Ford reweighting + Dijkstra per vertex"]
+
+    Q1 -- "No, single source" --> Q5{"Are all edge weights equal<br/>or graph unweighted?"}
+    Q5 -- Yes --> BFS["BFS<br/>O(V + E)"]
+    Q5 -- No --> Q6{"Is the graph a DAG?"}
+    Q6 -- Yes --> DAG["Topological order relaxation<br/>O(V + E), handles negative weights"]
+    Q6 -- No --> Q7{"Negative edge weights?"}
+
+    Q7 -- Yes --> Q8{"Must detect negative cycles?"}
+    Q8 -- Yes --> BF["Bellman-Ford<br/>O(V * E)"]
+    Q8 -- No --> SPFA["SPFA<br/>queue-based Bellman-Ford,<br/>fast on average, worst case O(V * E)"]
+
+    Q7 -- No --> Q9{"Weights only 0 and 1?"}
+    Q9 -- Yes --> B01["0-1 BFS<br/>deque, O(V + E)"]
+    Q9 -- No --> Q10{"Single target and a<br/>good admissible heuristic?<br/>coordinates, grid, map"}
+
+    Q10 -- Yes --> AS["A*<br/>Dijkstra guided by heuristic"]
+    Q10 -- No --> Q11{"Many queries on a static<br/>large graph, e.g. road network?"}
+    Q11 -- Yes --> CH["Preprocess: contraction hierarchies<br/>or ALT landmarks"]
+    Q11 -- No --> Q12{"Single source and single target<br/>on a large graph?"}
+    Q12 -- Yes --> BID["Bidirectional Dijkstra"]
+    Q12 -- No --> DIJ["Dijkstra<br/>binary heap O((V + E) log V)<br/>Fibonacci heap O(E + V log V)"]
+
+    BF -.-> NOTE["Negative cycle reachable:<br/>shortest path undefined"]

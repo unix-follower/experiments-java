@@ -1,0 +1,40 @@
+flowchart TD
+    S(["Latency spike or high p99"]) --> Q1{"Is time spent inside the JVM?<br/>compare client vs server timings, tracing"}
+    Q1 -- "No" --> EXT["Network / downstream / DNS / LB<br/>trace spans, check dependencies"]
+    Q1 -- Yes --> Q2{"Does latency correlate<br/>with GC pauses?<br/>-Xlog:gc*, jstat -gcutil"}
+
+    Q2 -- Yes --> Q2a{"Which GC symptom?"}
+    Q2a -- "Frequent young GC" --> F1["Reduce allocation rate<br/>profile allocations with JFR / async-profiler,<br/>enlarge young gen"]
+    Q2a -- "Long full GC / old gen full" --> F2["Heap too small or leak<br/>heap dump, jmap, MAT<br/>raise -Xmx, fix leak"]
+    Q2a -- "Long pauses on large heap" --> F3["Switch collector<br/>G1 pause target, ZGC or Shenandoah"]
+
+    Q2 -- No --> Q3{"Pauses with no GC?<br/>-Xlog:safepoint"}
+    Q3 -- Yes --> F4["Safepoint delays<br/>long counted loops, biased ops, large thread count<br/>fix code, reduce safepoint triggers"]
+    Q3 -- No --> Q4{"Slow only after start or deploy?"}
+
+    Q4 -- Yes --> F5["JIT warmup / deoptimization<br/>-XX:+PrintCompilation, JFR compilation events<br/>warm up, CDS / AOT, check code cache"]
+    Q4 -- No --> Q5{"Are threads blocked or waiting?<br/>jstack, jcmd Thread.print, JFR"}
+
+    Q5 -- "BLOCKED on monitors" --> F6["Lock contention<br/>shorten critical sections, use concurrent structures"]
+    Q5 -- "WAITING on pool or queue" --> F7["Thread / connection pool exhaustion<br/>size pools, add timeouts and bulkheads"]
+    Q5 -- "RUNNABLE in I/O" --> F8["Slow blocking I/O<br/>DB queries, HTTP calls, disk<br/>add timeouts, tune queries, async I/O"]
+    Q5 -- "Mostly RUNNABLE, busy" --> Q6{"Is CPU saturated or throttled?<br/>top, cgroup cpu.stat"}
+
+    Q6 -- Yes --> F9["CPU bound or container throttling<br/>profile hot methods, raise CPU limits,<br/>check -XX:ActiveProcessorCount"]
+    Q6 -- No --> Q7{"Swapping, page faults or<br/>noisy neighbour on host?<br/>vmstat, iostat"}
+    Q7 -- Yes --> F10["Memory pressure<br/>avoid swap, set limits, AlwaysPreTouch,<br/>move or isolate workload"]
+    Q7 -- No --> F11["Capture JFR recording<br/>and flame graph, then re-evaluate"]
+
+    EXT --> V
+    F1 --> V
+    F2 --> V
+    F3 --> V
+    F4 --> V
+    F5 --> V
+    F6 --> V
+    F7 --> V
+    F8 --> V
+    F9 --> V
+    F10 --> V
+    F11 --> Q1
+    V(["Apply one change, re-measure, compare p99"])

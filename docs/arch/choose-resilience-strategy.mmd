@@ -1,0 +1,52 @@
+flowchart TD
+    S(["What problem are you seeing<br/>when calling a dependency?"]) --> Q1{"Calls are slow or hang?"}
+    Q1 -- Yes --> TO["Timeout<br/>connect + read, plus deadline propagation<br/>so callees never outlive the caller's budget"]
+    Q1 -- No --> Q2
+    TO --> Q2{"Do requests fail with<br/>transient errors? 503, reset, timeout"}
+
+    Q2 -- Yes --> Q2a{"Is the operation idempotent<br/>or does it carry an idempotency key?"}
+    Q2a -- Yes --> RETRY["Retry<br/>exponential backoff + jitter, capped attempts,<br/>retry budget, only retryable errors"]
+    Q2a -- No --> IDEM["Add idempotency key or dedup first<br/>otherwise do not retry"]
+    Q2 -- No --> Q3
+    RETRY --> Q3
+    IDEM --> Q3{"Does the dependency fail for long periods<br/>or at a high failure rate?"}
+
+    Q3 -- Yes --> CB["Circuit breaker<br/>open on failure or slow-call rate, half-open probes"]
+    CB --> Q3a{"Can you still give a useful answer<br/>when it is open?"}
+    Q3a -- "Cached / stale data" --> STALE["Fallback: serve stale cache<br/>stale-if-error"]
+    Q3a -- "Reduced functionality" --> DEG["Graceful degradation<br/>default value, hide feature"]
+    Q3a -- "A standby exists" --> FO["Failover to replica or another region<br/>redundancy + health checks"]
+    Q3a -- "No" --> FF["Fail fast with clear error"]
+    Q3 -- No --> Q4
+    STALE --> Q4
+    DEG --> Q4
+    FO --> Q4
+    FF --> Q4{"Can slow calls exhaust shared threads,<br/>connections or memory?"}
+
+    Q4 -- Yes --> BH["Bulkhead<br/>semaphore or dedicated pool per dependency"]
+    Q4 -- No --> Q5
+    BH --> Q5{"Is your service or the dependency<br/>overloaded by incoming traffic?"}
+
+    Q5 -- Yes --> Q5a{"Is the traffic from known clients<br/>you can limit?"}
+    Q5a -- Yes --> RL["Rate limiter / quota<br/>per client or tenant"]
+    Q5a -- No --> LS["Load shedding<br/>drop low-priority requests, return 429/503"]
+    Q5 -- No --> Q6
+    RL --> Q5b
+    LS --> Q5b{"Is the work asynchronous or bursty?"}
+    Q5b -- Yes --> QLL["Queue-based load leveling<br/>buffer + backpressure, bounded queue"]
+    Q5b -- No --> Q6
+    QLL --> Q6{"Is a few slow outliers hurting<br/>p99 latency?"}
+
+    Q6 -- Yes --> HEDGE["Hedged requests<br/>send a second request after p95 delay<br/>only for idempotent reads"]
+    Q6 -- No --> Q7
+    HEDGE --> Q7{"Do some messages fail every time?<br/>poison messages"}
+
+    Q7 -- Yes --> DLQ["Dead-letter queue<br/>limited redeliveries, alert, manual replay"]
+    Q7 -- No --> Q8
+    DLQ --> Q8{"Do you detect failures too late<br/>or route to unhealthy instances?"}
+
+    Q8 -- Yes --> HC["Health checks + outlier detection<br/>remove bad instances from the load balancer"]
+    Q8 -- No --> DONE
+    HC --> DONE(["Combine only what you need<br/>Bulkhead > Circuit breaker > Retry > Timeout<br/>and observe: metrics, alerts, tracing"])
+
+    RETRY -.-> WARN["Retry storms multiply load<br/>cap attempts, use jitter, let the breaker stop retries"]
