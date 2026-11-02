@@ -1,0 +1,30 @@
+flowchart TD
+    S(["Start: choose HTTP+REST or gRPC"]) --> Q1{"Is the API consumed by browsers,<br/>third parties or the public?"}
+
+    Q1 -- Yes --> Q2{"Need streaming or very low latency<br/>for these clients?"}
+    Q2 -- No --> REST["HTTP + REST<br/>universal tooling, easy to debug,<br/>HTTP caching / CDN, OpenAPI"]
+    Q2 -- Yes --> GW["gRPC internally + gRPC-Web<br/>or REST transcoding gateway at the edge"]
+
+    Q1 -- "No, internal service-to-service" --> Q3{"Do you need streaming<br/>server, client or bidirectional?"}
+    Q3 -- Yes --> GRPC["gRPC<br/>HTTP/2, protobuf, native streaming"]
+    Q3 -- No --> Q4{"Are latency, throughput or payload size<br/>critical, with many chatty calls?"}
+
+    Q4 -- Yes --> Q6
+    Q4 -- No --> Q5{"Do you need strict typed contracts<br/>and generated clients across languages?"}
+    Q5 -- Yes --> Q6
+    Q5 -- No --> Q7{"Do you rely on HTTP caching,<br/>simple curl / browser debugging?"}
+    Q7 -- Yes --> REST
+    Q7 -- No --> Q8{"Does the team know protobuf<br/>and gRPC tooling?"}
+    Q8 -- No --> REST
+    Q8 -- Yes --> Q6
+
+    Q6{"Does the infrastructure support HTTP/2<br/>proxies, load balancers, service mesh?"}
+    Q6 -- Yes --> GRPC
+    Q6 -- "No, cannot change" --> REST
+
+    GRPC --> Q9{"Also need public or browser access?"}
+    Q9 -- Yes --> HYB["Hybrid<br/>REST at the edge, gRPC internally"]
+    Q9 -- No --> DONE(["Done"])
+    REST --> DONE
+    GW --> DONE
+    HYB --> DONE

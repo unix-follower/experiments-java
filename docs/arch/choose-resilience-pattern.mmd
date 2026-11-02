@@ -1,0 +1,34 @@
+flowchart TD
+    S(["Calling a remote dependency"]) --> T["Always set a timeout first<br/>connect + read, shorter than the caller's deadline"]
+    T --> Q1{"Can failures be transient?<br/>network blips, 503, timeouts"}
+
+    Q1 -- Yes --> Q2{"Is the operation idempotent<br/>or protected by an idempotency key?"}
+    Q2 -- Yes --> RETRY["Retry<br/>exponential backoff + jitter,<br/>max attempts, retry only retryable errors"]
+    Q2 -- No --> NORETRY["Do not retry blindly<br/>add idempotency key first or fail fast"]
+    Q1 -- No --> Q3
+
+    RETRY --> Q3
+    NORETRY --> Q3
+
+    Q3{"Can the dependency stay down or degraded<br/>for a while, with many callers failing repeatedly?"}
+    Q3 -- Yes --> CB["Circuit breaker<br/>open on failure / slow-call rate,<br/>half-open probes, plus fallback or cached value"]
+    Q3 -- No --> Q4
+
+    CB --> Q4{"Can slow or hung calls exhaust shared<br/>threads, connections or memory?"}
+    Q4 -- Yes --> Q5{"Blocking calls on a shared pool<br/>or many dependencies on one pool?"}
+    Q5 -- Yes --> BHT["Bulkhead: dedicated thread pool<br/>per dependency, bounded queue"]
+    Q5 -- No --> BHS["Bulkhead: semaphore<br/>max concurrent calls, reject extra"]
+    Q4 -- No --> Q6
+
+    BHT --> Q6
+    BHS --> Q6
+
+    Q6{"Is one caller or tenant able to starve others<br/>or overload the dependency?"}
+    Q6 -- Yes --> RL["Add rate limiter or load shedding<br/>per tenant / per client"]
+    Q6 -- No --> STACK
+    RL --> STACK
+
+    STACK(["Combine selected patterns<br/>outer to inner: Bulkhead > Circuit breaker > Retry > Timeout<br/>retries must not bypass an open breaker"])
+
+    CB -.-> W1["Warning: retry storms multiply load,<br/>so cap attempts and let the breaker stop retries"]
+    RETRY -.-> W1
