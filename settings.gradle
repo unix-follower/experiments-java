@@ -8,6 +8,6 @@ pluginManagement {
 rootProject.name = "experiments-java"
 
 include "geospatial:by-gomel-analysis"
-include("db:hibernate", "db:stock-market-db", "db:chemistry-pubchem-db")
+include "db:hibernate", "db:stock-market-db", "db:chemistry-pubchem-db", "db:foodb"
 include "math-practice"
 include "spring-boot-servlet-server"

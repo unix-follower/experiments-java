@@ -97,4 +97,5 @@ tasks.withType(Checkstyle) {
         maxWarnings = 1
         maxErrors = 1
     }
+    exclude '**/module-info.java'
 }
