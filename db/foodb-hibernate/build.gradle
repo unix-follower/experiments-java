@@ -1,0 +1,132 @@
+plugins {
+    id "application"
+    id "java"
+    id "jacoco"
+    id "pmd"
+    id "checkstyle"
+}
+
+group = 'org.example.experiments.db.foodb.hibernate'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(project(":db:foodb"))
+
+    // Source: https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    implementation "org.slf4j:slf4j-api:${slf4jApiVersion}"
+    // Source: https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    implementation "ch.qos.logback:logback-classic:${logbackClassicVersion}"
+    // https://mvnrepository.com/artifact/info.picocli/picocli
+    implementation "info.picocli:picocli:${picocliVersion}"
+    // https://mvnrepository.com/artifact/org.postgresql/postgresql
+    implementation("org.postgresql:postgresql:${postgresqlVersion}")
+    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
+    implementation("org.hibernate.orm:hibernate-core:${hibernateCoreVersion}")
+    // Source: https://mvnrepository.com/artifact/org.jboss.logging/jboss-logging
+    implementation "org.jboss.logging:jboss-logging:${jbossLoggingVersion}"
+    // Source: https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:${jakartaXmlBindApiVersion}"
+    // Source: https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime
+    implementation "org.glassfish.jaxb:jaxb-runtime:${glassfishJaxbRuntimeVersion}"
+    // Source: https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy
+    implementation "net.bytebuddy:byte-buddy:${byteBuddyVersion}"
+    // Source: https://mvnrepository.com/artifact/jakarta.transaction/jakarta.transaction-api
+    implementation "jakarta.transaction:jakarta.transaction-api:${jakartaTransactionApiVersion}"
+    // Source: https://mvnrepository.com/artifact/jakarta.enterprise/jakarta.enterprise.cdi-api
+    implementation "jakarta.enterprise:jakarta.enterprise.cdi-api:${jakartaEnterpriseCdiApiVersion}"
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+application {
+    mainClass = 'org.example.experiments.db.foodb.FooDbHibernateApp'
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.example.experiments.db.foodb.FooDbHibernateApp'
+        )
+    }
+}
+
+tasks.register('copyDependencies', Copy) {
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('libs/lib')
+}
+
+pmd {
+    ignoreFailures = false
+    ruleSets = [] // Disable default rulesets
+    ruleSetFiles = files("../../config/pmd-ruleset.xml")
+}
+
+checkstyle {
+    configFile = file("../../config/checkstyle.xml")
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.8
+            }
+        }
+
+        rule {
+            enabled = false
+            element = "CLASS"
+
+            limit {
+                counter = "LINE"
+                value = "TOTALCOUNT"
+                maximum = 0.8
+            }
+        }
+    }
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+}
+
+test {
+    finalizedBy jacocoTestReport
+}
+
+tasks.withType(Pmd) {
+    reports {
+        xml.required = true
+        html.required = true
+        maxFailures = 1
+    }
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required = true
+        html.required = true
+        maxWarnings = 1
+        maxErrors = 1
+    }
+    exclude '**/module-info.java'
+}

@@ -11,3 +11,5 @@ include "geospatial:by-gomel-analysis"
 include "db:hibernate", "db:stock-market-db", "db:chemistry-pubchem-db", "db:foodb"
 include "math-practice"
 include "spring-boot-servlet-server"
+
+include 'db:foodb-hibernate'
