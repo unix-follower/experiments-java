@@ -1,0 +1,22 @@
+volumes:
+  experiments_postgres_data:
+
+networks:
+  local-bridge:
+    external: true
+
+services:
+  experiments-postgres:
+    image: custom-postgres:18.7
+    container_name: experiments_postgres
+    hostname: experiments_postgres
+    restart: "no"
+    networks:
+      local-bridge:
+        ipv4_address: 192.168.2.2
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - experiments_postgres_data:/var/lib/postgresql/

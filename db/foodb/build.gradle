@@ -22,6 +22,8 @@ repositories {
 dependencies {
     // https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
     implementation("jakarta.persistence:jakarta.persistence-api:${persistenceApiVersion}")
+    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
+    compileOnly("org.hibernate.orm:hibernate-core:${hibernateCoreVersion}")
 
     // Source: https://mvnrepository.com/artifact/org.junit/junit-bom
     testImplementation(platform("org.junit:junit-bom:${junitBomVersion}"))

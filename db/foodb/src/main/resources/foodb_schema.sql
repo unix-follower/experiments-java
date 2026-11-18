@@ -26,7 +26,7 @@ EXTENSION IF NOT EXISTS pg_trgm;
 -- Generic helpers
 -- -------------------------------------------------------------------------------------
 CREATE
-OR REPLACE FUNCTION fn_set_updated_at() RETURNS trigger
+OR REPLACE FUNCTION foodb.fn_set_updated_at() RETURNS trigger
     LANGUAGE plpgsql AS
 $$
 BEGIN
@@ -39,7 +39,7 @@ $$;
 -- -------------------------------------------------------------------------------------
 -- Reference / dictionary tables
 -- -------------------------------------------------------------------------------------
-CREATE TABLE compound
+CREATE TABLE foodb.compound
 (
     id                 integer PRIMARY KEY,
     public_id          varchar(16)  NOT NULL,
@@ -61,14 +61,14 @@ CREATE TABLE compound
     CONSTRAINT ck_compound_state CHECK (state IS NULL OR lower(state) IN ('solid', 'liquid', 'gas'))
 );
 COMMENT
-ON TABLE compound IS 'Chemical compounds.';
-CREATE INDEX ix_compound_name_trgm ON compound USING gin (name gin_trgm_ops);
-CREATE INDEX ix_compound_lower_name ON compound (lower(name));
-CREATE INDEX ix_compound_inchikey ON compound (moldb_inchikey) WHERE moldb_inchikey IS NOT NULL;
-CREATE INDEX ix_compound_cas_number ON compound (cas_number) WHERE cas_number IS NOT NULL;
-CREATE INDEX ix_compound_taxonomy ON compound (kingdom, superklass, klass, subklass) WHERE kingdom IS NOT NULL;
+ON TABLE foodb.compound IS 'Chemical compounds.';
+CREATE INDEX ix_compound_name_trgm ON foodb.compound USING gin (name gin_trgm_ops);
+CREATE INDEX ix_compound_lower_name ON foodb.compound (lower(name));
+CREATE INDEX ix_compound_inchikey ON foodb.compound (moldb_inchikey) WHERE moldb_inchikey IS NOT NULL;
+CREATE INDEX ix_compound_cas_number ON foodb.compound (cas_number) WHERE cas_number IS NOT NULL;
+CREATE INDEX ix_compound_taxonomy ON foodb.compound (kingdom, superklass, klass, subklass) WHERE kingdom IS NOT NULL;
 
-CREATE TABLE nutrient
+CREATE TABLE foodb.nutrient
 (
     id                  integer PRIMARY KEY,
     legacy_id           integer,
@@ -95,10 +95,10 @@ CREATE TABLE nutrient
     updated_at          timestamptz  NOT NULL DEFAULT now(),
     CONSTRAINT uq_nutrient_public_id UNIQUE (public_id)
 );
-CREATE INDEX ix_nutrient_name ON nutrient (name);
-CREATE INDEX ix_nutrient_legacy_id ON nutrient (legacy_id) WHERE legacy_id IS NOT NULL;
+CREATE INDEX ix_nutrient_name ON foodb.nutrient (name);
+CREATE INDEX ix_nutrient_legacy_id ON foodb.nutrient (legacy_id) WHERE legacy_id IS NOT NULL;
 
-CREATE TABLE food
+CREATE TABLE foodb.food
 (
     id                   integer PRIMARY KEY,
     name                 varchar(255) NOT NULL,
@@ -127,12 +127,12 @@ CREATE TABLE food
     CONSTRAINT uq_food_name UNIQUE (name),
     CONSTRAINT ck_food_category CHECK (category IS NULL OR category IN ('generic', 'specific'))
 );
-CREATE INDEX ix_food_name_trgm ON food USING gin (name gin_trgm_ops);
-CREATE INDEX ix_food_group ON food (food_group, food_subgroup);
-CREATE INDEX ix_food_ncbi_taxonomy_id ON food (ncbi_taxonomy_id) WHERE ncbi_taxonomy_id IS NOT NULL;
-CREATE INDEX ix_food_legacy_id ON food (legacy_id) WHERE legacy_id IS NOT NULL;
+CREATE INDEX ix_food_name_trgm ON foodb.food USING gin (name gin_trgm_ops);
+CREATE INDEX ix_food_group ON foodb.food (food_group, food_subgroup);
+CREATE INDEX ix_food_ncbi_taxonomy_id ON foodb.food (ncbi_taxonomy_id) WHERE ncbi_taxonomy_id IS NOT NULL;
+CREATE INDEX ix_food_legacy_id ON foodb.food (legacy_id) WHERE legacy_id IS NOT NULL;
 
-CREATE TABLE flavor
+CREATE TABLE foodb.flavor
 (
     id           integer PRIMARY KEY,
     name         varchar(64) NOT NULL,
@@ -145,7 +145,7 @@ CREATE TABLE flavor
     CONSTRAINT uq_flavor_name UNIQUE (name)
 );
 
-CREATE TABLE health_effect
+CREATE TABLE foodb.health_effect
 (
     id               integer PRIMARY KEY,
     name             varchar(128) NOT NULL,
@@ -159,9 +159,9 @@ CREATE TABLE health_effect
     chebi_definition text,
     CONSTRAINT uq_health_effect_name UNIQUE (name)
 );
-CREATE INDEX ix_health_effect_chebi_id ON health_effect (chebi_id) WHERE chebi_id IS NOT NULL;
+CREATE INDEX ix_health_effect_chebi_id ON foodb.health_effect (chebi_id) WHERE chebi_id IS NOT NULL;
 
-CREATE TABLE pathway
+CREATE TABLE foodb.pathway
 (
     id          integer PRIMARY KEY,
     smpdb_id    varchar(16)  NOT NULL,
@@ -171,9 +171,9 @@ CREATE TABLE pathway
     updated_at  timestamptz  NOT NULL DEFAULT now(),
     CONSTRAINT uq_pathway_smpdb_id UNIQUE (smpdb_id)
 );
-CREATE INDEX ix_pathway_kegg_map_id ON pathway (kegg_map_id) WHERE kegg_map_id IS NOT NULL;
+CREATE INDEX ix_pathway_kegg_map_id ON foodb.pathway (kegg_map_id) WHERE kegg_map_id IS NOT NULL;
 
-CREATE TABLE enzyme
+CREATE TABLE foodb.enzyme
 (
     id                    integer PRIMARY KEY,
     name                  varchar(255) NOT NULL,
@@ -209,10 +209,10 @@ CREATE TABLE enzyme
     updated_at            timestamptz  NOT NULL DEFAULT now(),
     CONSTRAINT uq_enzyme_uniprot_id UNIQUE (uniprot_id)
 );
-CREATE INDEX ix_enzyme_gene_name ON enzyme (gene_name);
-CREATE INDEX ix_enzyme_name_trgm ON enzyme USING gin (name gin_trgm_ops);
+CREATE INDEX ix_enzyme_gene_name ON foodb.enzyme (gene_name);
+CREATE INDEX ix_enzyme_name_trgm ON foodb.enzyme USING gin (name gin_trgm_ops);
 
-CREATE TABLE ncbi_taxonomy_map
+CREATE TABLE foodb.ncbi_taxonomy_map
 (
     id            integer PRIMARY KEY,
     taxonomy_name varchar(64) NOT NULL,
@@ -220,9 +220,9 @@ CREATE TABLE ncbi_taxonomy_map
     created_at    timestamptz DEFAULT now(),
     updated_at    timestamptz DEFAULT now()
 );
-CREATE INDEX ix_ncbi_taxonomy_map_name ON ncbi_taxonomy_map (taxonomy_name);
+CREATE INDEX ix_ncbi_taxonomy_map_name ON foodb.ncbi_taxonomy_map (taxonomy_name);
 
-CREATE TABLE ontology_term
+CREATE TABLE foodb.ontology_term
 (
     id              integer PRIMARY KEY,
     term            varchar(255) NOT NULL,
@@ -236,13 +236,13 @@ CREATE TABLE ontology_term
     created_at      timestamptz  NOT NULL DEFAULT now(),
     updated_at      timestamptz  NOT NULL DEFAULT now(),
     legacy_id       varchar(32),
-    CONSTRAINT fk_ontology_term_parent FOREIGN KEY (parent_id) REFERENCES ontology_term (id)
+    CONSTRAINT fk_ontology_term_parent FOREIGN KEY (parent_id) REFERENCES foodb.ontology_term (id)
 );
-CREATE INDEX ix_ontology_term_parent_id ON ontology_term (parent_id);
-CREATE INDEX ix_ontology_term_external_id ON ontology_term (external_id) WHERE external_id IS NOT NULL;
-CREATE INDEX ix_ontology_term_term_trgm ON ontology_term USING gin (term gin_trgm_ops);
+CREATE INDEX ix_ontology_term_parent_id ON foodb.ontology_term (parent_id);
+CREATE INDEX ix_ontology_term_external_id ON foodb.ontology_term (external_id) WHERE external_id IS NOT NULL;
+CREATE INDEX ix_ontology_term_term_trgm ON foodb.ontology_term USING gin (term gin_trgm_ops);
 
-CREATE TABLE ontology_synonym
+CREATE TABLE foodb.ontology_synonym
 (
     id               integer PRIMARY KEY,
     ontology_term_id integer      NOT NULL,
@@ -255,12 +255,12 @@ CREATE TABLE ontology_synonym
     curator          varchar(64),
     created_at       timestamptz  NOT NULL DEFAULT now(),
     updated_at       timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT fk_ontology_synonym_term FOREIGN KEY (ontology_term_id) REFERENCES ontology_term (id)
+    CONSTRAINT fk_ontology_synonym_term FOREIGN KEY (ontology_term_id) REFERENCES foodb.ontology_term (id)
 );
-CREATE INDEX ix_ontology_synonym_term_id ON ontology_synonym (ontology_term_id);
-CREATE INDEX ix_ontology_synonym_synonym_trgm ON ontology_synonym USING gin (synonym gin_trgm_ops);
+CREATE INDEX ix_ontology_synonym_term_id ON foodb.ontology_synonym (ontology_term_id);
+CREATE INDEX ix_ontology_synonym_synonym_trgm ON foodb.ontology_synonym USING gin (synonym gin_trgm_ops);
 
-CREATE TABLE pfam
+CREATE TABLE foodb.pfam
 (
     id         integer PRIMARY KEY,
     identifier varchar(32) NOT NULL,
@@ -273,7 +273,7 @@ CREATE TABLE pfam
 -- -------------------------------------------------------------------------------------
 -- Compound children
 -- -------------------------------------------------------------------------------------
-CREATE TABLE accession_number
+CREATE TABLE foodb.accession_number
 (
     id          integer PRIMARY KEY,
     number      varchar(32) NOT NULL,
@@ -283,10 +283,10 @@ CREATE TABLE accession_number
     source_id   integer,
     source_type varchar(32)
 );
-CREATE INDEX ix_accession_number_compound_id ON accession_number (compound_id);
-CREATE INDEX ix_accession_number_number ON accession_number (number);
+CREATE INDEX ix_accession_number_compound_id ON foodb.accession_number (compound_id);
+CREATE INDEX ix_accession_number_number ON foodb.accession_number (number);
 
-CREATE TABLE compound_alternate_parent
+CREATE TABLE foodb.compound_alternate_parent
 (
     id          integer PRIMARY KEY,
     name        varchar(255),
@@ -296,10 +296,10 @@ CREATE TABLE compound_alternate_parent
     created_at  timestamptz NOT NULL DEFAULT now(),
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_compound_alternate_parent_compound_id ON compound_alternate_parent (compound_id);
-CREATE INDEX ix_compound_alternate_parent_name ON compound_alternate_parent (name);
+CREATE INDEX ix_compound_alternate_parent_compound_id ON foodb.compound_alternate_parent (compound_id);
+CREATE INDEX ix_compound_alternate_parent_name ON foodb.compound_alternate_parent (name);
 
-CREATE TABLE compound_external_descriptor
+CREATE TABLE foodb.compound_external_descriptor
 (
     id          integer PRIMARY KEY,
     external_id varchar(64) NOT NULL,
@@ -310,10 +310,10 @@ CREATE TABLE compound_external_descriptor
     created_at  timestamptz NOT NULL DEFAULT now(),
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_compound_external_descriptor_compound_id ON compound_external_descriptor (compound_id);
-CREATE INDEX ix_compound_external_descriptor_external_id ON compound_external_descriptor (external_id);
+CREATE INDEX ix_compound_external_descriptor_compound_id ON foodb.compound_external_descriptor (compound_id);
+CREATE INDEX ix_compound_external_descriptor_external_id ON foodb.compound_external_descriptor (external_id);
 
-CREATE TABLE compound_substituent
+CREATE TABLE foodb.compound_substituent
 (
     id          integer PRIMARY KEY,
     name        varchar(255),
@@ -323,10 +323,10 @@ CREATE TABLE compound_substituent
     created_at  timestamptz NOT NULL DEFAULT now(),
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_compound_substituent_compound_id ON compound_substituent (compound_id);
-CREATE INDEX ix_compound_substituent_name ON compound_substituent (name);
+CREATE INDEX ix_compound_substituent_compound_id ON foodb.compound_substituent (compound_id);
+CREATE INDEX ix_compound_substituent_name ON foodb.compound_substituent (name);
 
-CREATE TABLE compounds_enzyme
+CREATE TABLE foodb.compounds_enzyme
 (
     id          integer PRIMARY KEY,
     compound_id integer     NOT NULL,
@@ -337,11 +337,11 @@ CREATE TABLE compounds_enzyme
     creator_id  integer,
     updater_id  integer,
     CONSTRAINT uq_compounds_enzyme UNIQUE (compound_id, enzyme_id),
-    CONSTRAINT fk_compounds_enzyme_enzyme FOREIGN KEY (enzyme_id) REFERENCES enzyme (id)
+    CONSTRAINT fk_compounds_enzyme_enzyme FOREIGN KEY (enzyme_id) REFERENCES foodb.enzyme (id)
 );
-CREATE INDEX ix_compounds_enzyme_enzyme_id ON compounds_enzyme (enzyme_id, compound_id);
+CREATE INDEX ix_compounds_enzyme_enzyme_id ON foodb.compounds_enzyme (enzyme_id, compound_id);
 
-CREATE TABLE compounds_flavor
+CREATE TABLE foodb.compounds_flavor
 (
     id          integer PRIMARY KEY,
     compound_id integer     NOT NULL,
@@ -354,12 +354,12 @@ CREATE TABLE compounds_flavor
     source_id   integer,
     source_type varchar(32),
     CONSTRAINT uq_compounds_flavor UNIQUE (compound_id, flavor_id),
-    CONSTRAINT fk_compounds_flavor_flavor FOREIGN KEY (flavor_id) REFERENCES flavor (id),
+    CONSTRAINT fk_compounds_flavor_flavor FOREIGN KEY (flavor_id) REFERENCES foodb.flavor (id),
     CONSTRAINT ck_compounds_flavor_source_type CHECK (source_type IS NULL OR source_type = 'Compound')
 );
-CREATE INDEX ix_compounds_flavor_flavor_id ON compounds_flavor (flavor_id, compound_id);
+CREATE INDEX ix_compounds_flavor_flavor_id ON foodb.compounds_flavor (flavor_id, compound_id);
 
-CREATE TABLE compounds_health_effect
+CREATE TABLE foodb.compounds_health_effect
 (
     id                      integer PRIMARY KEY,
     compound_id             integer     NOT NULL,
@@ -375,13 +375,13 @@ CREATE TABLE compounds_health_effect
     updater_id              integer,
     source_id               integer,
     source_type             varchar(32),
-    CONSTRAINT fk_compounds_health_effect_health_effect FOREIGN KEY (health_effect_id) REFERENCES health_effect (id),
+    CONSTRAINT fk_compounds_health_effect_health_effect FOREIGN KEY (health_effect_id) REFERENCES foodb.health_effect (id),
     CONSTRAINT ck_compounds_health_effect_source_type CHECK (source_type IS NULL OR source_type = 'Compound')
 );
-CREATE INDEX ix_compounds_health_effect_compound_id ON compounds_health_effect (compound_id);
-CREATE INDEX ix_compounds_health_effect_health_effect_id ON compounds_health_effect (health_effect_id, compound_id);
+CREATE INDEX ix_compounds_health_effect_compound_id ON foodb.compounds_health_effect (compound_id);
+CREATE INDEX ix_compounds_health_effect_health_effect_id ON foodb.compounds_health_effect (health_effect_id, compound_id);
 
-CREATE TABLE compounds_pathway
+CREATE TABLE foodb.compounds_pathway
 (
     id          integer PRIMARY KEY,
     compound_id integer     NOT NULL,
@@ -391,11 +391,11 @@ CREATE TABLE compounds_pathway
     created_at  timestamptz NOT NULL DEFAULT now(),
     updated_at  timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT uq_compounds_pathway UNIQUE (compound_id, pathway_id),
-    CONSTRAINT fk_compounds_pathway_pathway FOREIGN KEY (pathway_id) REFERENCES pathway (id)
+    CONSTRAINT fk_compounds_pathway_pathway FOREIGN KEY (pathway_id) REFERENCES foodb.pathway (id)
 );
-CREATE INDEX ix_compounds_pathway_pathway_id ON compounds_pathway (pathway_id, compound_id);
+CREATE INDEX ix_compounds_pathway_pathway_id ON foodb.compounds_pathway (pathway_id, compound_id);
 
-CREATE TABLE pdb_identifier
+CREATE TABLE foodb.pdb_identifier
 (
     id          integer PRIMARY KEY,
     compound_id integer     NOT NULL,
@@ -403,9 +403,9 @@ CREATE TABLE pdb_identifier
     created_at  timestamptz NOT NULL DEFAULT now(),
     updated_at  timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_pdb_identifier_compound_id ON pdb_identifier (compound_id);
+CREATE INDEX ix_pdb_identifier_compound_id ON foodb.pdb_identifier (compound_id);
 
-CREATE TABLE reference
+CREATE TABLE foodb.reference
 (
     id          integer PRIMARY KEY,
     ref_type    varchar(16) NOT NULL,
@@ -421,13 +421,13 @@ CREATE TABLE reference
     source_type varchar(32) NOT NULL,
     CONSTRAINT ck_reference_source_type CHECK (source_type IN ('Compound'))
 );
-CREATE INDEX ix_reference_source ON reference (source_type, source_id);
-CREATE INDEX ix_reference_pubmed_id ON reference (pubmed_id) WHERE pubmed_id IS NOT NULL;
+CREATE INDEX ix_reference_source ON foodb.reference (source_type, source_id);
+CREATE INDEX ix_reference_pubmed_id ON foodb.reference (pubmed_id) WHERE pubmed_id IS NOT NULL;
 
 -- -------------------------------------------------------------------------------------
 -- Food children / enzyme children / polymorphic links
 -- -------------------------------------------------------------------------------------
-CREATE TABLE food_taxonomy
+CREATE TABLE foodb.food_taxonomy
 (
     id                   integer PRIMARY KEY,
     food_id              integer     NOT NULL,
@@ -436,12 +436,12 @@ CREATE TABLE food_taxonomy
     classification_order smallint    NOT NULL,
     created_at           timestamptz NOT NULL DEFAULT now(),
     updated_at           timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT fk_food_taxonomy_food FOREIGN KEY (food_id) REFERENCES food (id)
+    CONSTRAINT fk_food_taxonomy_food FOREIGN KEY (food_id) REFERENCES foodb.food (id)
 );
-CREATE INDEX ix_food_taxonomy_food_id ON food_taxonomy (food_id, classification_order);
-CREATE INDEX ix_food_taxonomy_ncbi_taxonomy_id ON food_taxonomy (ncbi_taxonomy_id);
+CREATE INDEX ix_food_taxonomy_food_id ON foodb.food_taxonomy (food_id, classification_order);
+CREATE INDEX ix_food_taxonomy_ncbi_taxonomy_id ON foodb.food_taxonomy (ncbi_taxonomy_id);
 
-CREATE TABLE enzyme_synonym
+CREATE TABLE foodb.enzyme_synonym
 (
     id         integer PRIMARY KEY,
     enzyme_id  integer      NOT NULL,
@@ -449,11 +449,11 @@ CREATE TABLE enzyme_synonym
     source     varchar(64),
     created_at timestamptz  NOT NULL DEFAULT now(),
     updated_at timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT fk_enzyme_synonym_enzyme FOREIGN KEY (enzyme_id) REFERENCES enzyme (id)
+    CONSTRAINT fk_enzyme_synonym_enzyme FOREIGN KEY (enzyme_id) REFERENCES foodb.enzyme (id)
 );
-CREATE INDEX ix_enzyme_synonym_enzyme_id ON enzyme_synonym (enzyme_id);
+CREATE INDEX ix_enzyme_synonym_enzyme_id ON foodb.enzyme_synonym (enzyme_id);
 
-CREATE TABLE pfam_membership
+CREATE TABLE foodb.pfam_membership
 (
     id         integer PRIMARY KEY,
     enzyme_id  integer     NOT NULL,
@@ -461,12 +461,12 @@ CREATE TABLE pfam_membership
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT uq_pfam_membership UNIQUE (enzyme_id, pfam_id),
-    CONSTRAINT fk_pfam_membership_enzyme FOREIGN KEY (enzyme_id) REFERENCES enzyme (id),
-    CONSTRAINT fk_pfam_membership_pfam FOREIGN KEY (pfam_id) REFERENCES pfam (id)
+    CONSTRAINT fk_pfam_membership_enzyme FOREIGN KEY (enzyme_id) REFERENCES foodb.enzyme (id),
+    CONSTRAINT fk_pfam_membership_pfam FOREIGN KEY (pfam_id) REFERENCES foodb.pfam (id)
 );
-CREATE INDEX ix_pfam_membership_pfam_id ON pfam_membership (pfam_id);
+CREATE INDEX ix_pfam_membership_pfam_id ON foodb.pfam_membership (pfam_id);
 
-CREATE TABLE map_items_pathway
+CREATE TABLE foodb.map_items_pathway
 (
     id            integer PRIMARY KEY,
     map_item_id   integer     NOT NULL,
@@ -474,12 +474,12 @@ CREATE TABLE map_items_pathway
     pathway_id    integer     NOT NULL,
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now(),
-    CONSTRAINT fk_map_items_pathway_pathway FOREIGN KEY (pathway_id) REFERENCES pathway (id)
+    CONSTRAINT fk_map_items_pathway_pathway FOREIGN KEY (pathway_id) REFERENCES foodb.pathway (id)
 );
-CREATE INDEX ix_map_items_pathway_item ON map_items_pathway (map_item_type, map_item_id);
-CREATE INDEX ix_map_items_pathway_pathway_id ON map_items_pathway (pathway_id);
+CREATE INDEX ix_map_items_pathway_item ON foodb.map_items_pathway (map_item_type, map_item_id);
+CREATE INDEX ix_map_items_pathway_pathway_id ON foodb.map_items_pathway (pathway_id);
 
-CREATE TABLE sequence
+CREATE TABLE foodb.sequence
 (
     id                integer PRIMARY KEY,
     header            text        NOT NULL,
@@ -490,13 +490,13 @@ CREATE TABLE sequence
     created_at        timestamptz NOT NULL DEFAULT now(),
     updated_at        timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX ix_sequence_sequenceable ON sequence (sequenceable_type, sequenceable_id);
+CREATE INDEX ix_sequence_sequenceable ON foodb.sequence (sequenceable_type, sequenceable_id);
 
 -- -------------------------------------------------------------------------------------
 -- Partitioned tables (RANGE by created_at, yearly)
 -- The partition key must be part of every PK/unique constraint, hence PRIMARY KEY (id, created_at).
 -- -------------------------------------------------------------------------------------
-CREATE TABLE content
+CREATE TABLE foodb.content
 (
     id                        bigint       NOT NULL,
     source_id                 integer      NOT NULL,
@@ -528,12 +528,12 @@ CREATE TABLE content
     CONSTRAINT ck_content_source_type CHECK (source_type IN ('Compound', 'Nutrient'))
 ) PARTITION BY RANGE (created_at);
 COMMENT
-ON TABLE content IS 'Food composition facts (~5.1M rows). source_id/source_type is polymorphic (compound | nutrient).';
-CREATE INDEX ix_content_food_source ON content (food_id, source_type, source_id);
-CREATE INDEX ix_content_source_food ON content (source_type, source_id, food_id);
-CREATE INDEX ix_content_standard_content ON content (source_type, source_id, standard_content) WHERE standard_content IS NOT NULL;
+ON TABLE foodb.content IS 'Food composition facts (~5.1M rows). source_id/source_type is polymorphic (compound | nutrient).';
+CREATE INDEX ix_content_food_source ON foodb.content (food_id, source_type, source_id);
+CREATE INDEX ix_content_source_food ON foodb.content (source_type, source_id, food_id);
+CREATE INDEX ix_content_standard_content ON foodb.content (source_type, source_id, standard_content) WHERE standard_content IS NOT NULL;
 
-CREATE TABLE compound_ontology_term
+CREATE TABLE foodb.compound_ontology_term
 (
     id               bigint      NOT NULL,
     compound_id      integer     NOT NULL,
@@ -544,11 +544,11 @@ CREATE TABLE compound_ontology_term
     PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
 COMMENT
-ON TABLE compound_ontology_term IS 'Compound <-> ontology_term link (~1.6M rows, contains duplicate pairs in the source).';
-CREATE INDEX ix_compound_ontology_term_compound ON compound_ontology_term (compound_id, ontology_term_id);
-CREATE INDEX ix_compound_ontology_term_term ON compound_ontology_term (ontology_term_id, compound_id);
+ON TABLE foodb.compound_ontology_term IS 'Compound <-> ontology_term link (~1.6M rows, contains duplicate pairs in the source).';
+CREATE INDEX ix_compound_ontology_term_compound ON foodb.compound_ontology_term (compound_id, ontology_term_id);
+CREATE INDEX ix_compound_ontology_term_term ON foodb.compound_ontology_term (ontology_term_id, compound_id);
 
-CREATE TABLE compound_synonym
+CREATE TABLE foodb.compound_synonym
 (
     id             integer      NOT NULL,
     synonym        varchar(255) NOT NULL,
@@ -560,44 +560,54 @@ CREATE TABLE compound_synonym
     PRIMARY KEY (id, created_at),
     CONSTRAINT ck_compound_synonym_source_type CHECK (source_type IN ('Compound', 'Nutrient', 'FoodcomexCompound'))
 ) PARTITION BY RANGE (created_at);
-CREATE INDEX ix_compound_synonym_source ON compound_synonym (source_type, source_id);
-CREATE INDEX ix_compound_synonym_synonym_trgm ON compound_synonym USING gin (synonym gin_trgm_ops);
+CREATE INDEX ix_compound_synonym_source ON foodb.compound_synonym (source_type, source_id);
+CREATE INDEX ix_compound_synonym_synonym_trgm ON foodb.compound_synonym USING gin (synonym gin_trgm_ops);
 
 -- Creates (idempotently) the yearly partition <parent>_y<year>.
 CREATE
-OR REPLACE FUNCTION fn_create_year_partition(p_parent regclass, p_year integer) RETURNS text
+OR REPLACE FUNCTION foodb.fn_create_year_partition(p_parent regclass, p_year integer) RETURNS text
     LANGUAGE plpgsql AS
 $$
 DECLARE
-v_name text := format('%s_y%s', p_parent::text, p_year);
+v_schema text;
+v_rel text;
+v_name text;
 BEGIN
+SELECT n.nspname, c.relname INTO v_schema, v_rel
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.oid = p_parent;
+v_name := format('%s_y%s', v_rel, p_year);
 EXECUTE format(
-        'CREATE TABLE IF NOT EXISTS %I PARTITION OF %s FOR VALUES FROM (%L) TO (%L)',
-        v_name, p_parent::text,
+        'CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF %s FOR VALUES FROM (%L) TO (%L)',
+        v_schema, v_name, p_parent::text,
         format('%s-01-01 00:00:00+00', p_year), format('%s-01-01 00:00:00+00', p_year + 1));
-RETURN v_name;
+RETURN format('%I.%I', v_schema, v_name);
 END;
 $$;
 
 -- Creates yearly partitions for [p_from, p_to] and a DEFAULT partition (catches out-of-range rows).
 CREATE
-OR REPLACE PROCEDURE pr_create_partitions(p_parent regclass, p_from integer, p_to integer)
+OR REPLACE PROCEDURE foodb.pr_create_partitions(p_parent regclass, p_from integer, p_to integer)
     LANGUAGE plpgsql AS
 $$
+DECLARE
+v_schema text;
+v_rel text;
 BEGIN
+SELECT n.nspname, c.relname INTO v_schema, v_rel
+FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.oid = p_parent;
 FOR y IN p_from..p_to LOOP
-        PERFORM fn_create_year_partition(p_parent, y);
+        PERFORM foodb.fn_create_year_partition(p_parent, y);
 END LOOP;
-EXECUTE format('CREATE TABLE IF NOT EXISTS %I PARTITION OF %s DEFAULT',
-               p_parent::text || '_default', p_parent::text);
+EXECUTE format('CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF %s DEFAULT',
+               v_schema, v_rel || '_default', p_parent::text);
 END;
 $$;
 
 -- Source data ranges: content 2014-2020, compound_ontology_term 2018-2019, compound_synonym 2010-2017.
 -- Future years are pre-created; call pr_create_partitions(...) yearly to extend.
-CALL pr_create_partitions('content', 2014, 2028);
-CALL pr_create_partitions('compound_ontology_term', 2018, 2028);
-CALL pr_create_partitions('compound_synonym', 2010, 2028);
+CALL foodb.pr_create_partitions('foodb.content', 2014, 2028);
+CALL foodb.pr_create_partitions('foodb.compound_ontology_term', 2018, 2028);
+CALL foodb.pr_create_partitions('foodb.compound_synonym', 2010, 2028);
 
 -- -------------------------------------------------------------------------------------
 -- Foreign keys
@@ -607,7 +617,7 @@ CALL pr_create_partitions('compound_synonym', 2010, 2028);
 -- so the bulk COPY is not rejected. VALIDATE CONSTRAINT after cleaning the data.
 -- -------------------------------------------------------------------------------------
 CREATE
-OR REPLACE PROCEDURE pr_add_post_load_foreign_keys()
+OR REPLACE PROCEDURE foodb.pr_add_post_load_foreign_keys()
     LANGUAGE plpgsql AS
 $$
 DECLARE
@@ -652,7 +662,7 @@ WHERE n.nspname = current_schema()
   AND c.relkind IN ('r', 'p')
   AND NOT c.relispartition LOOP
         EXECUTE format('CREATE TRIGGER trg_%s_set_updated_at BEFORE UPDATE ON %I
-                        FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at()', t, t);
+                        FOR EACH ROW EXECUTE FUNCTION foodb.fn_set_updated_at()', t, t);
 END LOOP;
 END;
 $$;
@@ -662,7 +672,7 @@ $$;
 -- -------------------------------------------------------------------------------------
 -- Content resolved to its polymorphic source (compound or nutrient) and food.
 CREATE
-OR REPLACE VIEW v_food_content AS
+OR REPLACE VIEW foodb.v_food_content AS
 SELECT ct.id                              AS content_id,
        ct.food_id,
        f.public_id                        AS food_public_id,
@@ -681,14 +691,14 @@ SELECT ct.id                              AS content_id,
        ct.citation,
        ct.citation_type,
        ct.created_at
-FROM content ct
-         JOIN food f ON f.id = ct.food_id
-         LEFT JOIN compound c ON ct.source_type = 'Compound' AND c.id = ct.source_id
-         LEFT JOIN nutrient n ON ct.source_type = 'Nutrient' AND n.id = ct.source_id;
+FROM foodb.content ct
+         JOIN foodb.food f ON f.id = ct.food_id
+         LEFT JOIN foodb.compound c ON ct.source_type = 'Compound' AND c.id = ct.source_id
+         LEFT JOIN foodb.nutrient n ON ct.source_type = 'Nutrient' AND n.id = ct.source_id;
 
 -- Compound with its classification and counters of related facts.
 CREATE
-OR REPLACE VIEW v_compound_overview AS
+OR REPLACE VIEW foodb.v_compound_overview AS
 SELECT c.id,
        c.public_id,
        c.name,
@@ -702,34 +712,34 @@ SELECT c.id,
        COALESCE(he.health_effects, ARRAY[]::text[]) AS health_effects,
        COALESCE(en.enzymes, ARRAY[]::text[])        AS enzymes,
        COALESCE(pw.pathways, ARRAY[]::text[])       AS pathways
-FROM compound c
+FROM foodb.compound c
          LEFT JOIN LATERAL (SELECT array_agg(DISTINCT x.name ORDER BY x.name) AS flavors
-                            FROM compounds_flavor cf
-                                     JOIN flavor x ON x.id = cf.flavor_id
+                            FROM foodb.compounds_flavor cf
+                                     JOIN foodb.flavor x ON x.id = cf.flavor_id
                             WHERE cf.compound_id = c.id) fl ON true
          LEFT JOIN LATERAL (SELECT array_agg(DISTINCT x.name ORDER BY x.name) AS health_effects
-                            FROM compounds_health_effect ch
-                                     JOIN health_effect x ON x.id = ch.health_effect_id
+                            FROM foodb.compounds_health_effect ch
+                                     JOIN foodb.health_effect x ON x.id = ch.health_effect_id
                             WHERE ch.compound_id = c.id) he ON true
          LEFT JOIN LATERAL (SELECT array_agg(DISTINCT x.name ORDER BY x.name) AS enzymes
-                            FROM compounds_enzyme ce
-                                     JOIN enzyme x ON x.id = ce.enzyme_id
+                            FROM foodb.compounds_enzyme ce
+                                     JOIN foodb.enzyme x ON x.id = ce.enzyme_id
                             WHERE ce.compound_id = c.id) en ON true
          LEFT JOIN LATERAL (SELECT array_agg(DISTINCT x.name ORDER BY x.name) AS pathways
-                            FROM compounds_pathway cp
-                                     JOIN pathway x ON x.id = cp.pathway_id
+                            FROM foodb.compounds_pathway cp
+                                     JOIN foodb.pathway x ON x.id = cp.pathway_id
                             WHERE cp.compound_id = c.id) pw ON true;
 
 -- Ontology terms with their full ancestor path (recursive).
 CREATE
-OR REPLACE VIEW v_ontology_term_path AS
+OR REPLACE VIEW foodb.v_ontology_term_path AS
 WITH RECURSIVE t AS (
     SELECT id, term, parent_id, 0 AS depth, ARRAY[id] AS id_path, term::text AS term_path
-    FROM ontology_term
+    FROM foodb.ontology_term
     WHERE parent_id IS NULL
     UNION ALL
     SELECT o.id, o.term, o.parent_id, t.depth + 1, t.id_path || o.id, t.term_path || ' > ' || o.term
-    FROM ontology_term o
+    FROM foodb.ontology_term o
              JOIN t ON o.parent_id = t.id
     WHERE NOT o.id = ANY (t.id_path)
 )
@@ -738,7 +748,7 @@ FROM t;
 
 -- Per (food, source) aggregates over the 5M-row content table: the expensive query most consumers need.
 CREATE
-MATERIALIZED VIEW mv_food_content_stats AS
+MATERIALIZED VIEW foodb.mv_food_content_stats AS
 SELECT food_id,
        source_type,
        source_id,
@@ -746,22 +756,22 @@ SELECT food_id,
        min(standard_content) AS min_content,
        avg(standard_content) AS avg_content,
        max(standard_content) AS max_content
-FROM content
+FROM foodb.content
 WHERE standard_content IS NOT NULL
 GROUP BY food_id, source_type, source_id WITH NO DATA;
-CREATE UNIQUE INDEX uq_mv_food_content_stats ON mv_food_content_stats (food_id, source_type, source_id);
-CREATE INDEX ix_mv_food_content_stats_source ON mv_food_content_stats (source_type, source_id);
+CREATE UNIQUE INDEX uq_mv_food_content_stats ON foodb.mv_food_content_stats (food_id, source_type, source_id);
+CREATE INDEX ix_mv_food_content_stats_source ON foodb.mv_food_content_stats (source_type, source_id);
 
 CREATE
-OR REPLACE PROCEDURE pr_refresh_materialized_views()
+OR REPLACE PROCEDURE foodb.pr_refresh_materialized_views()
     LANGUAGE plpgsql AS
 $$
 BEGIN
     IF
 EXISTS (SELECT 1 FROM pg_class WHERE oid = 'mv_food_content_stats'::regclass AND relispopulated) THEN
-        REFRESH MATERIALIZED VIEW CONCURRENTLY mv_food_content_stats;
+        REFRESH MATERIALIZED VIEW CONCURRENTLY foodb.mv_food_content_stats;
 ELSE
-        REFRESH MATERIALIZED VIEW mv_food_content_stats;
+        REFRESH MATERIALIZED VIEW foodb.mv_food_content_stats;
 END IF;
 END;
 $$;
@@ -771,18 +781,18 @@ $$;
 -- -------------------------------------------------------------------------------------
 -- Fuzzy compound lookup by name or synonym (uses the pg_trgm GIN indexes).
 CREATE
-OR REPLACE FUNCTION fn_search_compound(p_query text, p_limit integer DEFAULT 20)
+OR REPLACE FUNCTION foodb.fn_search_compound(p_query text, p_limit integer DEFAULT 20)
     RETURNS TABLE (id integer, public_id varchar, name varchar, similarity real)
     LANGUAGE sql STABLE AS
 $$
 SELECT m.id, m.public_id, m.name, max(m.sim) ::real
 FROM (SELECT c.id, c.public_id, c.name, similarity(c.name, p_query) AS sim
-      FROM compound c
+      FROM foodb.compound c
       WHERE c.name % p_query
       UNION ALL
       SELECT c.id, c.public_id, c.name, similarity(s.synonym, p_query)
-      FROM compound_synonym s
-          JOIN compound c
+      FROM foodb.compound_synonym s
+          JOIN foodb.compound c
       ON s.source_type = 'Compound' AND c.id = s.source_id
       WHERE s.synonym % p_query) m
 GROUP BY m.id, m.public_id, m.name
@@ -791,13 +801,13 @@ $$;
 
 -- Content of a given compound across foods.
 CREATE
-OR REPLACE FUNCTION fn_compound_food_content(p_compound_id integer)
+OR REPLACE FUNCTION foodb.fn_compound_food_content(p_compound_id integer)
     RETURNS TABLE (food_id integer, food_name varchar, measurements bigint, avg_content double precision)
     LANGUAGE sql STABLE AS
 $$
 SELECT s.food_id, f.name, s.measurements, s.avg_content
-FROM mv_food_content_stats s
-         JOIN food f ON f.id = s.food_id
+FROM foodb.mv_food_content_stats s
+         JOIN foodb.food f ON f.id = s.food_id
 WHERE s.source_type = 'Compound'
   AND s.source_id = p_compound_id
 ORDER BY s.avg_content DESC NULLS LAST;

@@ -23,9 +23,9 @@ dependencies {
     implementation(project(":db:stock-market-db"))
 
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
-    implementation("org.postgresql:postgresql:${providers.gradleProperty("postgresqlVersion").get()}")
+    implementation("org.postgresql:postgresql:${postgresqlVersion}")
     // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-core
-    implementation("org.hibernate.orm:hibernate-core:${providers.gradleProperty("hibernateCoreVersion").get()}")
+    implementation("org.hibernate.orm:hibernate-core:${hibernateCoreVersion}")
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
