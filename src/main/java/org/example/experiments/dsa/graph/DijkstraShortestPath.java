@@ -13,21 +13,21 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
-    public static DijkstraAlgorithm<Integer> withDenseGraph(DirectedGraph<Integer, DirectedWeightedDenseEdge> graph) {
+    public static DijkstraAlgorithm<Integer> withDenseGraph(DirectedGraph<Integer, WeightedEdge> graph) {
         return new WithDenseGraph(graph, null);
     }
 
     public static DijkstraAlgorithm<Integer> withDenseGraph(
-            DirectedGraph<Integer, DirectedWeightedDenseEdge> graph, AlgorithmListener<Integer> listener) {
+            DirectedGraph<Integer, WeightedEdge> graph, AlgorithmListener<Integer> listener) {
         return new WithDenseGraph(graph, listener);
     }
 
     private final int numberOfNodes;
     private double[] distances;
-    private final Graph<GraphVertex, DirectedWeightedEdge> graph;
+    private final Graph<GraphVertex, DirectedWeightedGraphEdge> graph;
     private VertexPath vertexPath;
 
-    public DijkstraShortestPath(Graph<GraphVertex, DirectedWeightedEdge> graph) {
+    public DijkstraShortestPath(Graph<GraphVertex, DirectedWeightedGraphEdge> graph) {
         this.numberOfNodes = graph.getVertices().size();
         this.graph = graph;
     }
@@ -64,7 +64,7 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
                 continue;
             }
 
-            for (DirectedWeightedEdge edge : graph.getEdges(nodeId)) {
+            for (DirectedWeightedGraphEdge edge : graph.getEdges(nodeId)) {
                 if (visited[edge.to().nodeId()]) {
                     continue; // Skip visited node
                 }
@@ -83,7 +83,7 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
         return vertexPath;
     }
 
-    private void relaxEdge(DirectedWeightedEdge edge, Queue<NodeDistancePair> priorityQueue, int nodeId) {
+    private void relaxEdge(DirectedWeightedGraphEdge edge, Queue<NodeDistancePair> priorityQueue, int nodeId) {
         final double distanceToNextVertex = distances[edge.from().nodeId()] + edge.weight();
         if (distanceToNextVertex < distances[edge.to().nodeId()]) {
             distances[edge.to().nodeId()] = distanceToNextVertex;
@@ -97,11 +97,11 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
     private static class WithDenseGraph implements DijkstraAlgorithm<Integer> {
         private final int numberOfNodes;
         private double[] distances;
-        private final DirectedGraph<Integer, DirectedWeightedDenseEdge> graph;
+        private final DirectedGraph<Integer, WeightedEdge> graph;
         private final AlgorithmListener<Integer> listener;
 
         public WithDenseGraph(
-                DirectedGraph<Integer, DirectedWeightedDenseEdge> graph,
+                DirectedGraph<Integer, WeightedEdge> graph,
                 AlgorithmListener<Integer> listener) {
             this.numberOfNodes = graph.getVertices().size();
             this.graph = graph;
@@ -139,7 +139,7 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
                     continue;
                 }
 
-                for (DirectedWeightedDenseEdge edge : graph.getEdges(nodeId)) {
+                for (WeightedEdge edge : graph.getEdges(nodeId)) {
                     if (visited[edge.to()]) {
                         continue; // Skip visited node
                     }
@@ -157,7 +157,7 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
             return Double.POSITIVE_INFINITY;
         }
 
-        private void relaxEdge(DirectedWeightedDenseEdge edge, Queue<NodeDistancePair> priorityQueue, int nodeId) {
+        private void relaxEdge(WeightedEdge edge, Queue<NodeDistancePair> priorityQueue, int nodeId) {
             final double distanceToNextVertex = distances[edge.from()] + edge.weight();
             if (distanceToNextVertex < distances[edge.to()]) {
                 listener.onEdgeRelaxed(nodeId, edge.from(), distanceToNextVertex);
@@ -174,7 +174,7 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
         private int edgeCount;
         private double[] distances;
         private Integer[] predecessors;
-        private final List<List<DirectedWeightedDenseEdge>> graph;
+        private final List<List<WeightedEdge>> graph;
 
         public WithDHeap(int numberOfNodes) {
             this.numberOfNodes = numberOfNodes;
@@ -186,17 +186,17 @@ public class DijkstraShortestPath implements DijkstraAlgorithm<GraphVertex> {
 
         public void addEdge(int from, int to, int cost) {
             edgeCount++;
-            graph.get(from).add(new DirectedWeightedDenseEdge(from, to, cost));
+            graph.get(from).add(new WeightedEdge(from, to, cost));
         }
 
-        public List<List<DirectedWeightedDenseEdge>> getGraph() {
+        public List<List<WeightedEdge>> getGraph() {
             return graph;
         }
 
         /**
          * Relax edge by updating minimum cost if applicable
          */
-        private void relaxEdge(DirectedWeightedDenseEdge edge, int nodeId, MinIndexedDHeap<Double> ipq) {
+        private void relaxEdge(WeightedEdge edge, int nodeId, MinIndexedDHeap<Double> ipq) {
             final double newDistance = distances[nodeId] + edge.weight();
             if (newDistance < distances[edge.to()]) {
                 predecessors[edge.to()] = nodeId;

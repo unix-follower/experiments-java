@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AdjacencyListGraph implements DirectedGraph<GraphVertex, DirectedWeightedEdge> {
-    private final Map<GraphVertex, List<DirectedWeightedEdge>> adjacencyList;
+public class AdjacencyListGraph implements DirectedGraph<GraphVertex, DirectedWeightedGraphEdge> {
+    private final Map<GraphVertex, List<DirectedWeightedGraphEdge>> adjacencyList;
     private final Map<Integer, GraphVertex> vertexByNodeIdLookupTable;
     private final Set<GraphVertex> vertices;
 
@@ -25,7 +25,7 @@ public class AdjacencyListGraph implements DirectedGraph<GraphVertex, DirectedWe
     }
 
     @Override
-    public Collection<DirectedWeightedEdge> getEdges(int nodeId) {
+    public Collection<DirectedWeightedGraphEdge> getEdges(int nodeId) {
         return adjacencyList.get(getVertex(nodeId));
     }
 
@@ -37,8 +37,8 @@ public class AdjacencyListGraph implements DirectedGraph<GraphVertex, DirectedWe
     }
 
     @Override
-    public DirectedWeightedEdge addEdge(GraphVertex from, GraphVertex to, double weight) {
-        final var edge = new DirectedWeightedEdge(from, to, weight);
+    public DirectedWeightedGraphEdge addEdge(GraphVertex from, GraphVertex to, double weight) {
+        final var edge = new DirectedWeightedGraphEdge(from, to, weight);
         adjacencyList.get(from).add(edge);
         return edge;
     }
@@ -49,7 +49,7 @@ public class AdjacencyListGraph implements DirectedGraph<GraphVertex, DirectedWe
     }
 
     @Override
-    public Collection<DirectedWeightedEdge> getEdges() {
+    public Collection<DirectedWeightedGraphEdge> getEdges() {
         // TODO: implement
         return List.of();
     }

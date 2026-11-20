@@ -5,10 +5,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class AdjacencyListDenseGraph implements DirectedGraph<Integer, DirectedWeightedDenseEdge> {
-    private final List<List<DirectedWeightedDenseEdge>> graph;
+public class AdjacencyListIndexGraph implements DirectedGraph<Integer, WeightedEdge> {
+    private final List<List<WeightedEdge>> graph;
 
-    public AdjacencyListDenseGraph(int numberOfNodes) {
+    public AdjacencyListIndexGraph(int numberOfNodes) {
         this.graph = new ArrayList<>(numberOfNodes);
         for (int i = 0; i < numberOfNodes; i++) {
             graph.add(new ArrayList<>());
@@ -24,7 +24,7 @@ public class AdjacencyListDenseGraph implements DirectedGraph<Integer, DirectedW
     }
 
     @Override
-    public Collection<DirectedWeightedDenseEdge> getEdges(int nodeId) {
+    public Collection<WeightedEdge> getEdges(int nodeId) {
         return graph.get(nodeId);
     }
 
@@ -34,8 +34,8 @@ public class AdjacencyListDenseGraph implements DirectedGraph<Integer, DirectedW
     }
 
     @Override
-    public DirectedWeightedDenseEdge addEdge(Integer from, Integer to, double weight) {
-        var edge = new DirectedWeightedDenseEdge(from, to, weight);
+    public WeightedEdge addEdge(Integer from, Integer to, double weight) {
+        final var edge = new WeightedEdge(from, to, weight);
         graph.get(from).add(edge);
         return edge;
     }
@@ -49,7 +49,7 @@ public class AdjacencyListDenseGraph implements DirectedGraph<Integer, DirectedW
     }
 
     @Override
-    public Collection<DirectedWeightedDenseEdge> getEdges() {
+    public Collection<WeightedEdge> getEdges() {
         // TODO: implement
         return List.of();
     }

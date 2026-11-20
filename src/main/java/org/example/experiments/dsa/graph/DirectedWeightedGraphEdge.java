@@ -1,6 +1,6 @@
 package org.example.experiments.dsa.graph;
 
-public record DirectedWeightedEdge(
+public record DirectedWeightedGraphEdge(
         GraphVertex from,
         GraphVertex to,
         double weight
