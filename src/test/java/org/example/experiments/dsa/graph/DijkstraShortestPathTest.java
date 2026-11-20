@@ -22,7 +22,7 @@ class DijkstraShortestPathTest {
     @Test
     void testDistanceToSingleNodeWithDenseGraph() {
         // given
-        final var graph = new AdjacencyListDenseGraph(1);
+        final var graph = new AdjacencyListIndexGraph(1);
         final var algorithm = DijkstraShortestPath.withDenseGraph(graph);
         // when
         final double distance = algorithm.computeDistance(0, 0);
@@ -48,7 +48,7 @@ class DijkstraShortestPathTest {
     @Test
     void testTwoNodesDirectEdgeWithDenseGraph() {
         // given
-        final var graph = new AdjacencyListDenseGraph(2);
+        final var graph = new AdjacencyListIndexGraph(2);
         graph.addEdge(0, 1, 5);
         final var algorithm = DijkstraShortestPath.withDenseGraph(graph);
         // when
@@ -60,7 +60,7 @@ class DijkstraShortestPathTest {
     @Test
     void testUnreachableNodeReturnsInfinity() {
         // given
-        final var graph = new AdjacencyListDenseGraph(3);
+        final var graph = new AdjacencyListIndexGraph(3);
         graph.addEdge(0, 1, 5);
         final var algorithm = DijkstraShortestPath.withDenseGraph(graph);
         // when
@@ -72,7 +72,7 @@ class DijkstraShortestPathTest {
     @Test
     void testShortestPathChosenOverLonger() {
         // given
-        final var graph = new AdjacencyListDenseGraph(3);
+        final var graph = new AdjacencyListIndexGraph(3);
         graph.addEdge(0, 2, 10);
         graph.addEdge(0, 1, 3);
         graph.addEdge(1, 2, 4);
@@ -87,7 +87,7 @@ class DijkstraShortestPathTest {
     void testReconstructPathSimple() {
         // given
         final int numberOfNodes = 4;
-        final var graph = new AdjacencyListDenseGraph(numberOfNodes);
+        final var graph = new AdjacencyListIndexGraph(numberOfNodes);
         graph.addEdge(0, 1, 1);
         graph.addEdge(1, 2, 1);
         graph.addEdge(2, 3, 1);
@@ -106,7 +106,7 @@ class DijkstraShortestPathTest {
     void testReconstructPathChoosesShortest() {
         // given
         final int numberOfNodes = 3;
-        final var graph = new AdjacencyListDenseGraph(numberOfNodes);
+        final var graph = new AdjacencyListIndexGraph(numberOfNodes);
         graph.addEdge(0, 2, 10);
         graph.addEdge(0, 1, 3);
         graph.addEdge(1, 2, 4);
@@ -125,7 +125,7 @@ class DijkstraShortestPathTest {
     void testReconstructPathUnreachableReturnsEmpty() {
         // given
         final int numberOfNodes = 3;
-        final var graph = new AdjacencyListDenseGraph(numberOfNodes);
+        final var graph = new AdjacencyListIndexGraph(numberOfNodes);
         graph.addEdge(0, 1, 5);
 
         final var predecessorTracking = new ShortestPathReconstruction(numberOfNodes);
@@ -142,7 +142,7 @@ class DijkstraShortestPathTest {
     void testReconstructPathStartEqualsEnd() {
         // given
         final int numberOfNodes = 2;
-        final var graph = new AdjacencyListDenseGraph(numberOfNodes);
+        final var graph = new AdjacencyListIndexGraph(numberOfNodes);
         graph.addEdge(0, 1, 1);
 
         final var predecessorTracking = new ShortestPathReconstruction(numberOfNodes);
@@ -159,7 +159,7 @@ class DijkstraShortestPathTest {
     @Test
     void testDirectedEdgeNotTraversedBackwards() {
         // given
-        final var graph = new AdjacencyListDenseGraph(2);
+        final var graph = new AdjacencyListIndexGraph(2);
         graph.addEdge(0, 1, 5);
         final var algorithm = DijkstraShortestPath.withDenseGraph(graph);
         // when
@@ -172,7 +172,7 @@ class DijkstraShortestPathTest {
     void testLongerPathWithMoreHops() {
         // given
         final int numberOfNodes = 5;
-        final var graph = new AdjacencyListDenseGraph(numberOfNodes);
+        final var graph = new AdjacencyListIndexGraph(numberOfNodes);
         // 0→1→2→3→4 with cost 1 each (total 4) vs 0→4 with cost 100
         graph.addEdge(0, 4, 100);
         graph.addEdge(0, 1, 1);
@@ -194,7 +194,7 @@ class DijkstraShortestPathTest {
     @Test
     void testDisconnectedGraph() {
         // given
-        final var graph = new AdjacencyListDenseGraph(4);
+        final var graph = new AdjacencyListIndexGraph(4);
         graph.addEdge(0, 1, 3);
         graph.addEdge(2, 3, 1);
         final var algorithm = DijkstraShortestPath.withDenseGraph(graph);

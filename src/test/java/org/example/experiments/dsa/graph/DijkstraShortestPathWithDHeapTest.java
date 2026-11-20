@@ -151,7 +151,7 @@ class DijkstraShortestPathWithDHeapTest {
         algorithm.addEdge(0, 2, 10);
 
         // when
-        final List<List<DirectedWeightedDenseEdge>> graph = algorithm.getGraph();
+        final List<List<WeightedEdge>> graph = algorithm.getGraph();
 
         // then
         Assertions.assertEquals(3, graph.size());
