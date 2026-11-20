@@ -61,11 +61,11 @@ tasks.register('copyDependencies', Copy) {
 pmd {
     ignoreFailures = false
     ruleSets = [] // Disable default rulesets
-    ruleSetFiles = files("config/pmd-ruleset.xml")
+    ruleSetFiles = files("../config/pmd-ruleset.xml")
 }
 
 checkstyle {
-    configFile = file("config/checkstyle.xml")
+    configFile = file("../config/checkstyle.xml")
 }
 
 jacocoTestReport {

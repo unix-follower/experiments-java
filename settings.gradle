@@ -7,6 +7,7 @@ pluginManagement {
 
 rootProject.name = "experiments-java"
 
+include "main"
 include "geospatial:by-gomel-analysis"
 include "db:hibernate", "db:stock-market-db", "db:chemistry-pubchem-db", "db:foodb"
 include "math-practice"
