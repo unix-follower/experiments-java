@@ -4,10 +4,10 @@
 
 This repo contains two unrelated things, do not conflate them:
 
-- **Root Gradle project** (`src/main/java/...`) — the only part built/tested by Gradle. Currently a single
+- **Root Gradle project** (`../main/src`) — the only part built/tested by Gradle. Currently a single
   application: `ExperimentsMultithreadingApp` under package `org.example.experiments.multithreading`
   (note: differs from the Gradle `group`, `com.example.experiments`, and from the `application.mainClass`
-  setting in `build.gradle`, which still points at the old `com.example.experiments.multithreading` package —
+  setting in `../main/build.gradle`, which still points at the old `com.example.experiments.multithreading` package —
   check both when wiring up a new entry point).
 - **`examples/`** — standalone Java demos (`chemistry`, `class_loader_app`) built manually with `javac`/`jar`,
   *not* part of the Gradle build. See `../examples/class_loader_app/README.md` for the exact `javac`/`jar`/`java --module-path`
@@ -29,7 +29,7 @@ Requires JDK 26 (configured via Gradle toolchain, auto-provisioned by Gradle).
 
 Checkstyle/PMD run as part of `check`/`build` and fail the build on violations (`ignoreFailures = false`,
 `maxWarnings = 1`, `maxErrors = 1`). `jacocoTestCoverageVerification` enforces 80% overall line coverage.
-There are currently no test sources in the project — add them under `src/test/java` mirroring the main
+There are currently no test sources in the project — add them under `../main/src` mirroring the main
 package structure.
 
 ## OpenTelemetry integration
