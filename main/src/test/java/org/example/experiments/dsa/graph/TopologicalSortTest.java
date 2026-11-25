@@ -70,4 +70,17 @@ class TopologicalSortTest {
         };
         Assertions.assertArrayEquals(expectedDistances, distances);
     }
+
+    @Test
+    void testVerifyIsTopsortOrdering() {
+        // given
+        final List<List<Integer>> graph = GraphUtils.createEmptyGraph(3);
+        GraphUtils.addDirectedEdge(graph, 0, 1);
+        GraphUtils.addDirectedEdge(graph, 1, 2);
+        final int[] order = {2, 1, 0};
+        // when
+        final boolean ordering = TopologicalSort.isTopsortOrdering(graph, order);
+        // then
+        Assertions.assertFalse(ordering);
+    }
 }
