@@ -18,28 +18,11 @@ class BreadthFirstSearchAlgorithmTest {
                 NullPointerException.class, () -> new BreadthFirstSearchAlgorithm(null));
     }
 
-    private static List<List<WeightedEdge>> createEmptyGraph(int nodes) {
-        final List<List<WeightedEdge>> graph = new ArrayList<>(nodes);
-        for (int i = 0; i < nodes; i++) {
-            graph.add(new ArrayList<>());
-        }
-        return graph;
-    }
-
-    private static void addDirectedEdge(List<List<WeightedEdge>> graph, int from, int to) {
-        graph.get(from).add(WeightedEdge.unweighted(from, to));
-    }
-
-    private static void addUndirectedEdge(List<List<WeightedEdge>> graph, int from, int to) {
-        addDirectedEdge(graph, from, to);
-        addDirectedEdge(graph, to, from);
-    }
-
     @Test
     void testSingletonGraph() {
         // given
         final int nodes = 1;
-        final List<List<WeightedEdge>> graph = createEmptyGraph(nodes);
+        final List<List<WeightedEdge>> graph = GraphUtils.createEmptyGraph(nodes);
         final var algorithm = new BreadthFirstSearchAlgorithm(graph);
         // when
         final List<Integer> path = algorithm.reconstructPath(0, 0);
@@ -51,8 +34,8 @@ class BreadthFirstSearchAlgorithmTest {
     void testTwoNodeGraph() {
         // given
         final int nodes = 2;
-        final List<List<WeightedEdge>> graph = createEmptyGraph(nodes);
-        addUndirectedEdge(graph, 0, 1);
+        final List<List<WeightedEdge>> graph = GraphUtils.createEmptyGraph(nodes);
+        GraphUtils.addUndirectedWeightedEdge(graph, 0, 1);
         final var algorithm = new BreadthFirstSearchAlgorithm(graph);
 
         // when
@@ -66,9 +49,9 @@ class BreadthFirstSearchAlgorithmTest {
     void testThreeNodeGraph() {
         // given
         final int nodes = 3;
-        final List<List<WeightedEdge>> graph = createEmptyGraph(nodes);
-        addUndirectedEdge(graph, 0, 1);
-        addUndirectedEdge(graph, 2, 1);
+        final List<List<WeightedEdge>> graph = GraphUtils.createEmptyGraph(nodes);
+        GraphUtils.addUndirectedWeightedEdge(graph, 0, 1);
+        GraphUtils.addUndirectedWeightedEdge(graph, 2, 1);
         final var algorithm = new BreadthFirstSearchAlgorithm(graph);
 
         // when
@@ -87,18 +70,17 @@ class BreadthFirstSearchAlgorithmTest {
         //   3     4     5
         //    \   / \   /
         //      6 --- 7
-        final List<List<WeightedEdge>> graph = createEmptyGraph(nodes);
-
-        addUndirectedEdge(graph, 0, 1);
-        addUndirectedEdge(graph, 1, 2);
-        addUndirectedEdge(graph, 0, 3);
-        addUndirectedEdge(graph, 1, 4);
-        addUndirectedEdge(graph, 2, 5);
-        addUndirectedEdge(graph, 3, 6);
-        addUndirectedEdge(graph, 4, 6);
-        addUndirectedEdge(graph, 4, 7);
-        addUndirectedEdge(graph, 5, 7);
-        addUndirectedEdge(graph, 6, 7);
+        final List<List<WeightedEdge>> graph = GraphUtils.createEmptyGraph(nodes);
+        GraphUtils.addUndirectedWeightedEdge(graph, 0, 1);
+        GraphUtils.addUndirectedWeightedEdge(graph, 1, 2);
+        GraphUtils.addUndirectedWeightedEdge(graph, 0, 3);
+        GraphUtils.addUndirectedWeightedEdge(graph, 1, 4);
+        GraphUtils.addUndirectedWeightedEdge(graph, 2, 5);
+        GraphUtils.addUndirectedWeightedEdge(graph, 3, 6);
+        GraphUtils.addUndirectedWeightedEdge(graph, 4, 6);
+        GraphUtils.addUndirectedWeightedEdge(graph, 4, 7);
+        GraphUtils.addUndirectedWeightedEdge(graph, 5, 7);
+        GraphUtils.addUndirectedWeightedEdge(graph, 6, 7);
 
         // when
         final var algorithm = new BreadthFirstSearchAlgorithm(graph);
@@ -113,7 +95,7 @@ class BreadthFirstSearchAlgorithmTest {
         final var random = new Random();
         for (int i = 0, nodes = 1; i < loops; i++, nodes++) {
             // given
-            final List<List<WeightedEdge>> adjListGraph = createEmptyGraph(nodes);
+            final List<List<WeightedEdge>> adjListGraph = GraphUtils.createEmptyGraph(nodes);
 
             final int startVertex = random.nextInt(1) * nodes;
             final int targetVertex = random.nextInt(1) * nodes;
@@ -163,7 +145,7 @@ class BreadthFirstSearchAlgorithmTest {
             final int from = random.nextInt(1) * nodes;
             final int to = random.nextInt(1) * nodes;
             if (!edgeMatrix[from][to]) {
-                addUndirectedEdge(adjListGraph, from, to);
+                GraphUtils.addUndirectedWeightedEdge(adjListGraph, from, to);
                 graph[from][to] = graph[to][from] = 1;
                 edgeMatrix[from][to] = edgeMatrix[to][from] = true;
             }

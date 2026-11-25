@@ -3,27 +3,13 @@ package org.example.experiments.dsa.graph;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 class ConnectedComponentsDfsTest {
-    private static List<List<Integer>> createGraph(int nodes) {
-        final List<List<Integer>> adjacencyListGraph = new ArrayList<>(nodes);
-        for (int i = 0; i < nodes; i++) {
-            adjacencyListGraph.add(new ArrayList<>());
-        }
-        return adjacencyListGraph;
-    }
-
-    private static void addUndirectedEdge(List<List<Integer>> graph, int from, int to) {
-        graph.get(from).add(to);
-        graph.get(to).add(from);
-    }
-
     @Test
     void testConnectivity() {
         final int nodes = 11;
-        final List<List<Integer>> graph = createGraph(nodes);
+        final List<List<Integer>> graph = GraphUtils.createEmptyGraph(nodes);
 
         // 0 --- 1       3 --- 6
         // |   / |       |     |
@@ -32,14 +18,14 @@ class ConnectedComponentsDfsTest {
         //
         //       8
 
-        addUndirectedEdge(graph, 0, 1);
-        addUndirectedEdge(graph, 1, 7);
-        addUndirectedEdge(graph, 7, 0);
-        addUndirectedEdge(graph, 1, 2);
-        addUndirectedEdge(graph, 2, 5);
-        addUndirectedEdge(graph, 3, 4);
-        addUndirectedEdge(graph, 3, 6);
-        addUndirectedEdge(graph, 6, 9);
+        GraphUtils.addUndirectedEdge(graph, 0, 1);
+        GraphUtils.addUndirectedEdge(graph, 1, 7);
+        GraphUtils.addUndirectedEdge(graph, 7, 0);
+        GraphUtils.addUndirectedEdge(graph, 1, 2);
+        GraphUtils.addUndirectedEdge(graph, 2, 5);
+        GraphUtils.addUndirectedEdge(graph, 3, 4);
+        GraphUtils.addUndirectedEdge(graph, 3, 6);
+        GraphUtils.addUndirectedEdge(graph, 6, 9);
 
         final var graphComponents = new ConnectedComponentsDfs(graph);
 

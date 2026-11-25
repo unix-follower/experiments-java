@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * <p>NOTE: An alternative to topological sorting is Kahn's algorithm, which uses
- * in-degree counting and BFS instead of DFS. See {@link Kahns}.</p>
+ * in-degree counting and BFS instead of DFS. See {@link KahnsTopologicalOrdering}.</p>
  */
 public class TopologicalSort {
     private TopologicalSort() {
@@ -88,5 +88,38 @@ public class TopologicalSort {
         }
 
         return distances;
+    }
+
+    private static boolean findUsingDfs(List<List<Integer>> graph, boolean[] visited, int at, int target) {
+        final List<Integer> edges = graph.get(at);
+        if (edges.isEmpty() || visited[at]) {
+            return false;
+        }
+        if (at == target) {
+            return true;
+        }
+        visited[at] = true;
+        for (int edge : edges) {
+            if (findUsingDfs(graph, visited, edge, target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Verifies that the topological ordering is not violated, O(n²)
+     */
+    public static boolean isTopsortOrdering(List<List<Integer>> graph, int[] order) {
+        final int nodes = graph.size();
+        for (int i = 0; i < nodes; i++) {
+            for (int j = i + 1; j < nodes; j++) {
+                // Check that `node j` appears before `node i`
+                if (findUsingDfs(graph, new boolean[nodes], order[j], order[i])) { // NOPMD
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
