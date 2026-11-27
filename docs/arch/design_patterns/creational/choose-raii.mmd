@@ -1,0 +1,30 @@
+flowchart TD
+    S(["Object holds or manages a resource"]) --> NOTE["Note: RAII is a C++ idiom built on deterministic destructors.<br/>Java has no destructors; the equivalent is AutoCloseable<br/>with try-with-resources"]
+    NOTE --> Q1{"Is the resource plain heap memory<br/>managed by the GC?"}
+    Q1 -- Yes --> NONE["Nothing to do<br/>let the GC reclaim it"]
+    Q1 -- No --> Q2{"Is it a scarce external resource?<br/>file, socket, DB connection, lock, native memory,<br/>transaction, temp file"}
+    Q2 -- No --> NONE
+    Q2 -- Yes --> Q3{"Must it be released deterministically<br/>at the end of a scope?"}
+
+    Q3 -- No --> Q4{"Is its lifetime managed by a container?<br/>Spring, CDI, application server"}
+    Q4 -- Yes --> CONT["Container lifecycle<br/>@PreDestroy, DisposableBean, @Bean destroyMethod,<br/>SmartLifecycle"]
+    Q4 -- No --> LONG["Long-lived owner<br/>implement AutoCloseable, close at shutdown<br/>register a shutdown hook if needed"]
+
+    Q3 -- Yes --> Q5{"What kind of resource?"}
+    Q5 -- "Lock" --> LOCK["lock.lock(); try { ... } finally { lock.unlock(); }<br/>acquire before the try block"]
+    Q5 -- "Native / off-heap memory" --> ARENA["Arena (FFM API)<br/>try (Arena a = Arena.ofConfined())"]
+    Q5 -- "I/O, JDBC, streams, custom" --> Q6{"Does the type implement AutoCloseable?"}
+    Q6 -- No --> IMPL["Implement AutoCloseable<br/>idempotent close(), release in reverse order"]
+    Q6 -- Yes --> TWR["try-with-resources<br/>try (var r = acquire()) { ... }"]
+    IMPL --> TWR
+
+    TWR --> Q7{"Is acquisition done in a constructor<br/>that can fail midway?"}
+    Q7 -- Yes --> PART["Release already-acquired parts in catch<br/>or use a static factory that closes on failure"]
+    Q7 -- No --> Q8
+    PART --> Q8{"Is ownership transferred past the scope?<br/>returned, async, another thread"}
+
+    Q8 -- No --> DONE(["Done"])
+    Q8 -- Yes --> OWN["Explicit ownership hand-off<br/>caller or callee closes exactly once,<br/>document it; consider StructuredTaskScope"]
+    OWN --> SAFE["Safety net only<br/>Cleaner to catch leaks and log them"]
+
+    TWR -.-> WARN["Cautions<br/>finalize() is deprecated and unreliable,<br/>exceptions from close() are suppressed on the primary one,<br/>multiple resources close in reverse order"]

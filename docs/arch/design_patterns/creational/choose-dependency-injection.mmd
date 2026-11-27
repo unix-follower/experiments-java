@@ -1,0 +1,32 @@
+flowchart TD
+    S(["Class needs a collaborator"]) --> NOTE["Note: DI is an Inversion of Control technique,<br/>not a GoF creational pattern, but it solves the same<br/>problem: who creates and wires objects"]
+    NOTE --> Q1{"Is the collaborator a value object, data holder<br/>or pure utility with no behavior to swap?"}
+    Q1 -- Yes --> NEW["Plain new or static call<br/>no injection needed"]
+    Q1 -- No --> Q2{"Does the class create or look up<br/>the collaborator itself?<br/>new, static singleton, JNDI"}
+    Q2 -- No --> Q3
+    Q2 -- Yes --> Q3{"Need another implementation,<br/>a test double,<br/>or different behavior<br/>per env?"}
+
+    Q3 -- No --> Q4{"Is there lifecycle, scope,<br/>lazy init<br/>or shared-instance mgmt?"}
+    Q4 -- No --> NEW
+    Q4 -- Yes --> APPLY
+    Q3 -- Yes --> APPLY["Apply Dependency Injection<br/>depend on an interface,<br/>receive it from outside"]
+
+    APPLY --> Q5{"Is the dependency required<br/>for the object to work?"}
+    Q5 -- Yes --> CTOR["Constructor injection<br/>final fields,<br/>immutable, fails fast"]
+    Q5 -- No --> Q6{"Is it optional<br/>or reconfigurable<br/>after construction?"}
+    Q6 -- Yes --> SETTER["Setter injection<br/>with a safe default"]
+    Q6 -- No --> Q7{"Needed by only one method call?"}
+    Q7 -- Yes --> PARAM["Method / parameter injection"]
+    Q7 -- No --> CTOR
+
+    CTOR --> Q8{"Does the class need<br/>a new instance per use,<br/>lazy creation, or runtime<br/>params to create it?"}
+    SETTER --> Q8
+    PARAM --> Q8
+    Q8 -- Yes --> PROV["Inject a Factory, Provider or ObjectProvider<br/>instead of the instance"]
+    Q8 -- No --> Q9{"Is the object graph large,<br/>with scopes, profiles or<br/>AOP such as transactions?"}
+    PROV --> Q9
+
+    Q9 -- Yes --> CONT["Use a DI container<br/>Spring, CDI, Guice, Dagger"]
+    Q9 -- No --> PURE["Pure DI<br/>wire manually<br/>in the composition root,<br/>e.g. main()"]
+
+    APPLY -.-> AVOID["Avoid<br/>field injection (hard to test, hidden deps),<br/>Service Locator (hidden deps),<br/>too many constructor params signals a design smell"]

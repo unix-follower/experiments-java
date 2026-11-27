@@ -1,0 +1,29 @@
+flowchart TD
+    S(["Objects are created and discarded often"]) --> Q1{"Is creating one expensive?<br/>connection, thread,<br/>native buffer, TLS session,<br/>parser"}
+    Q1 -- No --> GC["Plain new<br/>cheap objects,<br/>the JVM allocator and<br/>GC beat a pool,<br/>pooling adds locking<br/>and stale-state bugs"]
+    Q1 -- Yes --> Q2{"Are many acquired<br/>and released<br/>frequently, or must the<br/>count be capped?"}
+    Q2 -- No --> Q3{"Is reuse within a<br/>single thread enough?"}
+    Q3 -- Yes --> TL["ThreadLocal or per-request instance<br/>e.g. reusable buffer,<br/>avoid with virtual threads"]
+    Q3 -- No --> CACHE["Cache or lazy singleton<br/>create once and share<br/>if the object is thread-safe"]
+
+    Q2 -- Yes --> Q4{"Can an object be reset to<br/>a clean state<br/>and safely reused<br/>by another caller?"}
+    Q4 -- No --> Q5{"Is the goal only to limit<br/>concurrency<br/>to a scarce resource?"}
+    Q5 -- Yes --> SEM["Semaphore or bulkhead<br/>no object reuse,<br/>just a permit limit"]
+    Q5 -- No --> NEW2["Create per use<br/>and fix the cost:<br/>lighter object,<br/>batching, async"]
+
+
+    Q4 -- Yes --> Q6{"Is it a thread, task<br/>or virtual-thread workload?"}
+    Q6 -- "Platform threads" --> TPE["ThreadPoolExecutor<br/>/ ExecutorService<br/>size by CPU or I/O wait"]
+    Q6 -- "Virtual threads" --> VT["Do not pool virtual threads<br/>use a semaphore to limit<br/>access to resources"]
+    Q6 -- "Other objects" --> Q7{"Does a proven pool<br/>already exist?"}
+    Q7 -- Yes --> LIB["Use it<br/>HikariCP for JDBC,<br/>Apache HttpClient pool,<br/>Netty buffer pool,<br/>Commons Pool2"]
+    Q7 -- No --> POOL["Implement or<br/>configure an object pool"]
+
+    POOL --> CFG["Configure<br/>min / max size,<br/>borrow timeout or fail-fast,<br/>validation on borrow,<br/>idle eviction,<br/>reset on return,<br/>leak detection"]
+    LIB --> CFG
+    CFG --> Q8{"What happens when the pool<br/>is exhausted?"}
+    Q8 -- "Wait with timeout" --> BLK["Block up to a timeout,<br/>then fail<br/>avoid unbounded waits"]
+    Q8 -- "Fail fast" --> FF["Reject and shed load<br/>pair with circuit breaker"]
+    Q8 -- "Grow" --> GROW["Elastic pool<br/>watch memory,<br/>keep a hard maximum"]
+
+    POOL -.-> WARN["Cautions<br/>always return objects in<br/>finally / try-with-resources,<br/>never leak state<br/>between users,<br/>measure before and after"]
