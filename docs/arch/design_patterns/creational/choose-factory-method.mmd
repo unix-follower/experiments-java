@@ -1,0 +1,25 @@
+flowchart TD
+    S(["Need to create an object"]) --> Q1{"Does the caller know<br/>the exact concrete<br/>class at compile time,<br/>and will it never change?"}
+    Q1 -- Yes --> Q2{"Does creation need<br/>a descriptive name,<br/>validation, caching<br/>or instance reuse?"}
+    Q2 -- No --> CTOR["Plain constructor<br/>or record"]
+    Q2 -- Yes --> SF["Static factory method<br/>of(), valueOf(),<br/>getInstance(), from()"]
+
+    Q1 -- No --> Q3{"Are you creating several<br/>related products<br/>that must vary together?"}
+    Q3 -- Yes --> AF["Abstract Factory<br/>see choose-abstract-factory.mmd"]
+    Q3 -- No --> Q4{"Is the product complex with<br/>many optional params<br/>or build steps?"}
+    Q4 -- Yes --> BLD["Builder<br/>see choose-builder.mmd"]
+    Q4 -- No --> Q5{"Is the choice of concrete class<br/>made by a subclass<br/>or an extension point?<br/>framework, plugin,<br/>template method"}
+
+    Q5 -- Yes --> FM["Factory Method (GoF)<br/>abstract creator<br/>declares createProduct(),<br/>subclasses return<br/>the concrete product"]
+    Q5 -- No --> Q6{"Is the choice made<br/>by a runtime value<br/>such as a type, config key<br/>or user input?"}
+    Q6 -- No --> CTOR
+    Q6 -- Yes --> Q7{"Do you need to add<br/>new product types<br/>without modifying existing<br/>client code?"}
+    Q7 -- No --> SIMPLE["Simple factory<br/>one static method with<br/>switch or map lookup"]
+    Q7 -- Yes --> Q8{"Should the framework class<br/>stay unaware<br/>of subclasses and<br/>be reused as-is?"}
+    Q8 -- Yes --> FM
+    Q8 -- No --> REG["Factory with registry<br/>Map of key<br/>to Supplier,<br/>or ServiceLoader"]
+
+    FM --> PRO["Benefits<br/>decouples creator<br/>from product,<br/>open/closed for new products,<br/>single place for creation logic"]
+    FM --> CON["Costs<br/>extra subclasses per product,<br/>more indirection<br/>than a constructor"]
+
+    FM -.-> EX["Java examples<br/>Calendar.getInstance,<br/>NumberFormat.getInstance,<br/>Collection.iterator, List.of,<br/>Executors.newFixedThreadPool"]

@@ -1,0 +1,29 @@
+flowchart TD
+    S(["Need to construct an object"]) --> Q1{"Does the constructor need<br/>many parameters? roughly 4 or more"}
+
+    Q1 -- No --> Q2{"Is construction a multi-step process<br/>or must different representations<br/>be produced by the same steps?"}
+    Q2 -- No --> SIMPLE["Plain constructor, record<br/>or static factory method"]
+    Q2 -- Yes --> Q5
+
+    Q1 -- Yes --> Q3{"Are many parameters optional<br/>or have sensible defaults?"}
+    Q3 -- No --> Q4{"Are same-typed parameters easy to mix up,<br/>hurting readability?"}
+    Q4 -- No --> REC["Record or constructor<br/>parameter object is enough"]
+    Q4 -- Yes --> BLD
+    Q3 -- Yes --> Q6{"Must the object be immutable<br/>or valid as soon as it exists?"}
+    Q6 -- No --> SET["Setters or JavaBean may suffice,<br/>but risk partially built objects"]
+    Q6 -- Yes --> BLD
+
+    Q5{"Do different clients repeat the same<br/>construction recipe?"}
+    Q5 -- Yes --> DIR["Builder + Director<br/>Director encapsulates the build order"]
+    Q5 -- No --> BLD
+
+    BLD["Builder<br/>fluent methods, validate in build(),<br/>product is immutable"]
+
+    BLD --> Q7{"Is the builder boilerplate worth writing by hand?"}
+    Q7 -- No --> GEN["Generate it<br/>Lombok @Builder, Immutables, record builders"]
+    Q7 -- Yes --> HAND["Hand-written static nested Builder<br/>Effective Java style"]
+
+    BLD -.-> EX["Java examples<br/>StringBuilder, Stream.Builder,<br/>HttpRequest.newBuilder, Locale.Builder"]
+
+    SIMPLE -.-> ALT["Choosing among product families or subclasses?<br/>use Factory Method / Abstract Factory instead"]
+    DIR --> BLD

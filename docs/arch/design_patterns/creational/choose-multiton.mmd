@@ -1,0 +1,26 @@
+flowchart TD
+    S(["Need controlled access to instances"]) --> Q1{"Is exactly one instance needed<br/>for the whole application?"}
+    Q1 -- Yes --> SING["Singleton<br/>enum or holder idiom,<br/>prefer DI singleton scope"]
+    Q1 -- No --> Q2{"Is exactly one instance needed<br/>per key?<br/>tenant, locale, DB name,<br/>region"}
+    Q2 -- No --> Q3{"Are objects immutable<br/>and merely worth<br/>sharing to save memory?"}
+    Q3 -- Yes --> FLY["Flyweight or<br/>value cache<br/>intern by value,<br/>e.g. Integer.valueOf,<br/>String.intern"]
+    Q3 -- No --> NEW["Plain new or Factory<br/>no instance control needed"]
+
+    Q2 -- Yes --> Q4{"Does a duplicate instance<br/>break correctness?<br/>shared state,<br/>connection limit,<br/>identity checks"}
+    Q4 -- No --> CACHE["Cache or pool<br/>duplicates are only<br/>a performance cost"]
+    Q4 -- Yes --> Q5{"Is the set of keys fixed and<br/>known at compile time?"}
+
+    Q5 -- Yes --> ENUM["Enum<br/>one constant per key,<br/>thread-safe,<br/>serialization-safe"]
+    Q5 -- No --> Q6{"Is a DI container<br/>available and<br/>the key known per request<br/>or tenant?"}
+    Q6 -- Yes --> DI["DI-managed scope<br/>or registry bean<br/>custom scope,<br/>Map of key to bean<br/>via factory"]
+    Q6 -- No --> Q7{"Accessed by multiple<br/>threads?"}
+    Q7 -- No --> MT1["Multiton<br/>HashMap key to instance"]
+    Q7 -- Yes --> MT2["Multiton<br/>ConcurrentHashMap<br/>.computeIfAbsent,<br/>private constructor,<br/>factory getInstance(key)"]
+
+    MT1 --> Q8
+    MT2 --> Q8{"Can the key set<br/>grow without bound?"}
+    Q8 -- Yes --> EVICT["Add eviction<br/>Caffeine,<br/>WeakReference values,<br/>explicit remove / close"]
+    Q8 -- No --> OK(["Done"])
+    EVICT --> OK
+
+    MT2 -.-> WARN["Cautions<br/>global mutable state<br/>hurts testing,<br/>keys keep instances<br/>alive (leak risk),<br/>needs a clear<br/>lifecycle and close()"]

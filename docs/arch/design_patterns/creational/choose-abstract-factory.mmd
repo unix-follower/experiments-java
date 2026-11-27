@@ -1,0 +1,26 @@
+flowchart TD
+    S(["Need to create objects"]) --> Q1{"Must client code stay independent<br/>of concrete classes?"}
+    Q1 -- No --> SIMPLE["Plain constructor or static factory method<br/>or let DI container create it"]
+    Q1 -- Yes --> Q2{"Do you create a family of<br/>related or dependent products?<br/>e.g. Button + Checkbox + Menu"}
+
+    Q2 -- "No, a single product type" --> Q3{"Should subclasses or config decide<br/>which implementation is created?"}
+    Q3 -- Yes --> FM["Factory Method<br/>one creation method, varies per subclass"]
+    Q3 -- No --> SIMPLE
+
+    Q2 -- Yes --> Q4{"Must products from one family<br/>be used together, never mixed?"}
+    Q4 -- No --> FM2["Several Factory Methods<br/>or DI per product"]
+    Q4 -- Yes --> Q5{"Is there more than one variant<br/>of the family? OS, theme, DB vendor, region"}
+    Q5 -- "No, only one ever" --> YAGNI["YAGNI<br/>skip the abstraction, add it when a second variant appears"]
+    Q5 -- Yes --> Q6{"Is the variant chosen at runtime,<br/>by config or by environment?"}
+    Q6 -- "No, fixed at compile time" --> Q7{"Is the set of product types stable?<br/>adding a type touches every factory"}
+    Q6 -- Yes --> Q7
+    Q7 -- No --> ALT["Reconsider<br/>Prototype, registry of suppliers<br/>or DI-based configuration"]
+    Q7 -- Yes --> Q8{"Is each product complex and built<br/>step by step with many options?"}
+    Q8 -- Yes --> AFB["Abstract Factory<br/>factory methods return products built by Builders"]
+    Q8 -- No --> AF["Abstract Factory<br/>interface with createA(), createB(), ...<br/>one concrete factory per family"]
+
+    AF --> EX["Java examples<br/>DocumentBuilderFactory, JDBC Connection<br/>(createStatement, prepareStatement), javax.xml.transform.TransformerFactory"]
+    AFB --> EX
+
+    CLONE["Creating copies of existing objects?"] -.-> PROTO["Prototype"]
+    STEP["One complex object, step-by-step?"] -.-> BUILD["Builder"]

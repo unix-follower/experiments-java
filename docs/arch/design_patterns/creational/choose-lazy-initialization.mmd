@@ -1,0 +1,28 @@
+flowchart TD
+    S(["Resource or object to initialize"]) --> Q1{"Is creation expensive?<br/>CPU, I/O, memory, net,<br/>class loading"}
+    Q1 -- No --> EAGER["Eager initialization<br/>final field, simplest<br/>and thread-safe"]
+    Q1 -- Yes --> Q2{"Might it never be used in<br/>a typical run or request?"}
+    Q2 -- No --> Q3{"Does startup time matter<br/>more than first-use latency?"}
+    Q3 -- No --> EAGER
+    Q3 -- Yes --> LAZY
+    Q2 -- Yes --> Q4{"Must config or connectivity errors<br/>surface at startup? fail-fast"}
+    Q4 -- Yes --> EAGER2["Eager init + validate at startup<br/>or lazy with a<br/>startup health check"]
+    Q4 -- No --> LAZY
+
+    LAZY["Apply lazy initialization"] --> Q5{"Is a framework managing the object?<br/>Spring, CDI"}
+    Q5 -- Yes --> FW["@Lazy bean,<br/>ObjectProvider / Provider,<br/>spring.main.lazy-initialization"]
+    Q5 -- No --> Q6{"Is it a static field or<br/>a per-instance field?"}
+
+    Q6 -- Static --> HOLDER["Initialization-on-demand holder<br/>static nested class,<br/>JVM guarantees thread safety"]
+    Q6 -- Instance --> Q7{"Accessed by<br/>multiple threads?"}
+    Q7 -- No --> SIMPLE["Plain null check in getter"]
+    Q7 -- Yes --> Q8{"Is it a keyed collection<br/>of values?"}
+    Q8 -- Yes --> CIA["ConcurrentHashMap<br/>.computeIfAbsent<br/>keep the mapping<br/>function short,<br/>no nested updates"]
+    Q8 -- No --> Q9{"Is the getter on<br/>a hot path?"}
+    Q9 -- No --> SYNC["synchronized getter"]
+    Q9 -- Yes --> Q10{"Is the value immutable and can<br/>it be computed twice<br/>harmlessly?"}
+    Q10 -- Yes --> RACY["Racy single-check<br/>like String.hashCode"]
+    Q10 -- No --> DCL["Double-checked locking<br/>volatile field<br/>+ synchronized block<br/>or memoizing<br/>Supplier / StableValue<br/>if available"]
+
+    Q1 -.-> NOTE["Measure first<br/>lazy adds first-call latency,<br/>a null state,<br/>deferred failures<br/>and concurrency bugs"]
+    LAZY -.-> RESET["Needs reset or reload?<br/>use AtomicReference<br/>or a cache with expiry<br/>instead of one-time init"]

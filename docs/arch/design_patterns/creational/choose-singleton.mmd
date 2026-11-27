@@ -1,0 +1,30 @@
+flowchart TD
+    S(["Need a single shared object?"]) --> Q1{"Does the domain truly<br/>require exactly one instance?<br/>hardware access,<br/>process-wide registry,<br/>config"}
+    Q1 -- "No, just convenient<br/>global access" --> NEW["Plain object<br/>passed explicitly<br/>constructor<br/>or method parameter"]
+    Q1 -- Yes --> Q2{"Does it hold<br/>no mutable state?"}
+    Q2 -- Yes --> UTIL["Static utility class<br/>or pure functions<br/>no instance needed"]
+    Q2 -- No --> Q3{"Is one instance needed<br/>per key?<br/>tenant, locale,<br/>database name"}
+    Q3 -- Yes --> MT["Multiton<br/>see choose-multiton.mmd"]
+    Q3 -- No --> Q4{"Is a DI container available?<br/>Spring,<br/>CDI, Guice"}
+
+    Q4 -- Yes --> DI["Container-managed<br/>singleton scope<br/>@Component default scope,<br/>@ApplicationScoped<br/>testable, no static access"]
+    Q4 -- No --> Q5{"Is it expensive to create<br/>or may it never be used?"}
+
+    Q5 -- No --> Q6{"Must it be safe<br/>against serialization<br/>and reflection attacks?"}
+    Q6 -- Yes --> ENUM["Enum singleton<br/>enum Config { INSTANCE }"]
+    Q6 -- No --> EAGER["Eager static final field<br/>private constructor, simplest, thread-safe"]
+
+    Q5 -- Yes --> Q7{"Is initialization needing<br/>runtime arguments<br/>or reloadable?"}
+    Q7 -- Yes --> DCL["Double-checked locking<br/>volatile field<br/>+ synchronized block,<br/>or AtomicReference<br/>/ memoizing Supplier"]
+    Q7 -- No --> HOLDER["Initialization-on-demand<br/>holder<br/>static nested class,<br/>lazy and thread-safe"]
+
+    DI --> Q8
+    ENUM --> Q8
+    EAGER --> Q8
+    DCL --> Q8
+    HOLDER --> Q8{"Is the singleton<br/>accessed through<br/>an interface and<br/>injectable in tests?"}
+    Q8 -- No --> FIX["Extract an interface<br/>and inject it so tests<br/>can substitute a fake"]
+    Q8 -- Yes --> OK(["Done"])
+    FIX --> OK
+
+    OK -.-> WARN["Cautions<br/>hidden global mutable state,<br/>tight coupling,<br/>one instance per<br/>class loader not per JVM,<br/>make it thread-safe<br/>or immutable"]

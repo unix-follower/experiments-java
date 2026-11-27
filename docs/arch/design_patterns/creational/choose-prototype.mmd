@@ -1,0 +1,32 @@
+flowchart TD
+    S(["Need new objects that resemble existing ones"]) --> Q1{"Do you need copies of<br/>an already<br/>configured object<br/>as a starting point?"}
+    Q1 -- No --> FB["Factory or Builder<br/>build from scratch"]
+    Q1 -- Yes --> Q2{"Is the object immutable?<br/>record, value object"}
+    Q2 -- Yes --> WITH["No copy needed, share it<br/>use withers / toBuilder()<br/>for changed variants"]
+    Q2 -- No --> Q3{"Is building it from scratch<br/>expensive or complex?<br/>parsing, I/O,<br/>many setup steps"}
+    Q3 -- No --> Q4{"Is the concrete class<br/>unknown to the caller,<br/>only an interface<br/>or runtime type?"}
+    Q4 -- No --> NEW["Plain new<br/>or copy constructor<br/>for convenience"]
+    Q4 -- Yes --> Q5
+    Q3 -- Yes --> Q5{"Do many preconfigured<br/>variants exist<br/>that would need a<br/>factory subclass each?"}
+
+    Q5 -- Yes --> REG["Prototype registry<br/>Map of name to prototype,<br/>clone on request"]
+    Q5 -- No --> PROTO["Apply Prototype<br/>object copies itself"]
+
+    REG --> Q6
+    PROTO --> Q6{"Does the object<br/>graph contain<br/>mutable nested<br/>objects or collections?"}
+    Q6 -- No --> SHALLOW["Shallow copy is enough"]
+    Q6 -- Yes --> Q7{"Are there cycles, shared references<br/>or non-copyable resources?<br/>files, sockets, threads"}
+    Q7 -- Yes --> HARD["Reconsider<br/>use a Factory, exclude<br/>or re-create resources,<br/>track visited objects<br/>when deep copying"]
+    Q7 -- No --> DEEP["Deep copy"]
+
+    SHALLOW --> M
+    DEEP --> M{"How to implement<br/>copying in Java?"}
+    M -- "Preferred" --> CC["Copy constructor<br/>or copy factory<br/>explicit,<br/>final fields work,<br/>type-safe"]
+    M -- "Need generic<br/>polymorphic copy" --> ABS["Abstract copy() method<br/>on the interface<br/>each subclass overrides"]
+    M -- "Rare,<br/>complex graphs" --> SER["Serialization<br/>or library mapper copy slow,<br/>requires Serializable"]
+    M -- "Avoid" --> CLN["Cloneable + clone()<br/>shallow by default,<br/>final-field problems,<br/>bypasses constructors"]
+
+    CC --> OK(["Done"])
+    ABS --> OK
+    SER --> OK
+    CLN -.-> WARN["Effective Java:<br/>prefer copy constructors<br/>and copy factories to clone()"]
